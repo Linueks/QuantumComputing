@@ -1,0 +1,4 @@
+#model:basicModel, seed:42, epochs:1, learningRate:0.1, shots:1000 1st:model, 2nd:loss, 3rd:accuracy
+[2.34709791 5.9872558  4.58245417 3.7635166  0.98605135]
+[0.73325174]
+[0.31]

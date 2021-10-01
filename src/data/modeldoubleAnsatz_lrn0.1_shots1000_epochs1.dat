@@ -1,0 +1,5 @@
+#model:doubleAnsatz, seed:42, epochs:1, learningRate:0.1, shots:1000 1st:model, 2nd:loss, 3rd:accuracy
+[0.9713223  0.36722833 5.41750142 3.7980917  4.44233301 0.12569624
+ 6.09510975 5.24648393 1.29669972]
+[0.82766328]
+[0.16]
