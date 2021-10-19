@@ -1,2 +1,2 @@
 # Quantum-Machine-Learning
-Repo for project 2, Comp. phys II 2021
+Folder for project 2, FYS4411 Spring 2021
