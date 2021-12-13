@@ -17,8 +17,9 @@ Meant to be a section to quickly jot down notes and work out ideas
 # Sources
 Some sources included by the Qiskit team has been downloaded from arxiv and put into the papers folder
 
-
-
+- [Digital Quantum Simulation of Spin Systems](papers\digital_qc_sim.pdf)
+- [Quantum Computers as Universal Simulators](papers\qc_as_uqs_907.03505.pdf)
+- [Mitigating Measurement Errors](papers\mitigating_measure_error_2006.14044.pdf)
 
 
 
@@ -28,15 +29,15 @@ Some sources included by the Qiskit team has been downloaded from arxiv and put 
 
 # IBM Quantum Awards: Open Science Prize 2021
 
-IBM Quantum is excited to announce the fourth annual quantum awards (and the second annual Open Science Prize)—an award for those who can present an open source solution to some of the most pressing problems in the field of quantum computing. 
+IBM Quantum is excited to announce the fourth annual quantum awards (and the second annual Open Science Prize)—an award for those who can present an open source solution to some of the most pressing problems in the field of quantum computing.
 
-This year, the challenge will feature one problem from the field of quantum simulation, solvable through one of two approaches. The best open source solution to each approach will receive a $40,000 prize, and the winner overall will receive another $20,000. 
+This year, the challenge will feature one problem from the field of quantum simulation, solvable through one of two approaches. The best open source solution to each approach will receive a $40,000 prize, and the winner overall will receive another $20,000.
 
-Simulating physical systems on quantum computers is a promising application of near-term quantum processors. This year's problem asks participants to simulate a Heisenberg model Hamiltonian for three interacting atoms on IBM Quantum's 7-qubit Jakarta system. The goal is to simulate the evolution of a known quantum state with the best fidelity as possible using Trotterization. 
+Simulating physical systems on quantum computers is a promising application of near-term quantum processors. This year's problem asks participants to simulate a Heisenberg model Hamiltonian for three interacting atoms on IBM Quantum's 7-qubit Jakarta system. The goal is to simulate the evolution of a known quantum state with the best fidelity as possible using Trotterization.
 
 **Read more at our [blog](https://www.research.ibm.com/blog/quantum-open-science-prize) and register [here](https://ibmquantumawards.bemyapp.com)**.
 
-The competition will conclude and judging will commence on  April 16, 2022. 
+The competition will conclude and judging will commence on  April 16, 2022.
 
 Participants must choose one solution method and may submit their answer using 1) Qiskit Pulse or 2) solving the problem using Qiskit defaults, as outlined below:
 
