@@ -4,8 +4,8 @@
 
 # Immediate TO-DO
 
-- [] foo
-- [] bar
+- [ ] foo
+- [ ] bar
 
 
 
