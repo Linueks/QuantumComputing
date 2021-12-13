@@ -17,9 +17,9 @@ Meant to be a section to quickly jot down notes and work out ideas
 # Sources
 Some sources included by the Qiskit team has been downloaded from arxiv and put into the papers folder
 
-- [Digital Quantum Simulation of Spin Systems](papers\digital_qc_sim.pdf)
-- [Quantum Computers as Universal Simulators](papers\qc_as_uqs_907.03505.pdf)
-- [Mitigating Measurement Errors](papers\mitigating_measure_error_2006.14044.pdf)
+- [Digital Quantum Simulation of Spin Systems](papers/digital_qc_sim.pdf)
+- [Quantum Computers as Universal Simulators](papers/qc_as_uqs_907.03505.pdf)
+- [Mitigating Measurement Errors](papers/mitigating_measure_error_2006.14044.pdf)
 
 
 
