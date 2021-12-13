@@ -2,19 +2,19 @@
 
 
 
-# Immediate TO-DO
+## Immediate TO-DO
 
 - [ ] foo
 - [ ] bar
 
 
 
-# Ideas and Notes
+## Ideas and Notes
 Meant to be a section to quickly jot down notes and work out ideas
 
 
 
-# Sources
+## Sources
 Some sources included by the Qiskit team has been downloaded from arxiv and put into the papers folder
 
 - [Digital Quantum Simulation of Spin Systems](papers/digital_qc_sim.pdf)
@@ -27,7 +27,7 @@ Some sources included by the Qiskit team has been downloaded from arxiv and put 
 
 
 
-# IBM Quantum Awards: Open Science Prize 2021
+## IBM Quantum Awards: Open Science Prize 2021 (description)
 
 IBM Quantum is excited to announce the fourth annual quantum awards (and the second annual Open Science Prize)—an award for those who can present an open source solution to some of the most pressing problems in the field of quantum computing.
 
