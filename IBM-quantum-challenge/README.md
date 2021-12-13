@@ -4,8 +4,8 @@
 
 # Immediate TO-DO
 
-1. foo
-2. bar
+- [] foo
+- [] bar
 
 
 
@@ -20,7 +20,7 @@ Some sources included by the Qiskit team has been downloaded from arxiv and put 
 - [Digital Quantum Simulation of Spin Systems](papers/digital_qc_sim.pdf)
 - [Quantum Computers as Universal Simulators](papers/qc_as_uqs_907.03505.pdf)
 - [Mitigating Measurement Errors](papers/mitigating_measure_error_2006.14044.pdf)
-
+- [Reducing Unitary Errors](papers/reducing_unitary_error_cross_resonance_2007.02925.pdf)
 
 
 
