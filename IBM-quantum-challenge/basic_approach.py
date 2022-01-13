@@ -116,29 +116,29 @@ def construct_trotter_gate(t):
 
 def trotterized_simulation(t,
                            target_time=np.pi,
-                           trotter_steps=16,
+                           trotter_steps=6,
                            draw_circuit=False):
     # generate the full circuit for the trotterized simulation
     # there are also some "fancy / ugly" things happening here
-    quantum_register = qk.QuantumRegister(7)                                    # 7 qubits on Jakarta machine
+    quantum_register = qk.QuantumRegister(5)                                    # 7 qubits on Jakarta machine. 5 on Belem
     quantum_circuit = qk.QuantumCircuit(quantum_register)
 
     # set up initial state |110>
-    quantum_circuit.x([3, 5])
+    quantum_circuit.x([3, 4])                                                   # Remember to switch back once access to Jakarta
     single_trotter_step = construct_trotter_gate(t)
 
     for n in range(trotter_steps):
-        quantum_circuit.append(single_trotter_step,
+        quantum_circuit.append(single_trotter_step,                             # Switch
                             [quantum_register[1],
                              quantum_register[3],
-                             quantum_register[5]])
+                             quantum_register[4]])
 
         quantum_circuit = quantum_circuit.bind_parameters(
                             {t: target_time/trotter_steps})
-        final_circuit = tomo.state_tomography_circuits(quantum_circuit,
+        final_circuit = tomo.state_tomography_circuits(quantum_circuit,         # Switch
                                                     [quantum_register[1],
                                                      quantum_register[3],
-                                                     quantum_register[5]])
+                                                     quantum_register[4]])
 
     if draw_circuit:
         #print(final_circuit[-1].decompose())
@@ -184,6 +184,23 @@ def tomography_analysis(result, circuit, target_state):
 
 
 
+def run_simulation(backend):
+    circuit = trotterized_simulation(time, draw_circuit=False)
+    jobs = execute_circuit(circuit, backend=backend)
+    fidelities = []
+
+    for job in jobs:
+        fidelity = tomography_analysis(job.result(), circuit, initial_state)
+        fidelities.append(fidelity)
+
+    print(f'state tomography fidelity = {np.mean(fidelities):.4f}',
+           '\u00B1', f'{np.std(fidelities):.4f}')
+
+
+
+
+
+
 if __name__=='__main__':
     ket_zero = opflow.Zero
     ket_one = opflow.One
@@ -194,20 +211,20 @@ if __name__=='__main__':
 
     # set up qiskit simulators
     jakarta_noiseless = QasmSimulator()
-    """
-    provider = qk.IBMQ.get_provider(hub='ibm-q-community',
-                                    group='ibmquantumawards',
-                                    project='open-science-22')
-    jakarta_noisy = QasmSimulator.from_backend(provider.get_backend('ibmq_jakarta'))
-    """
 
-    circuit = trotterized_simulation(time, draw_circuit=False)
-    jobs = execute_circuit(circuit, backend=jakarta_noiseless)
-    fidelities = []
+    provider = qk.IBMQ.load_account()
+    provider = qk.IBMQ.get_provider(hub='ibm-q', group='open', project='main')
+    #print(provider.backends())
+    belem_backend = provider.get_backend('ibmq_belem')                          # has the same topology as Jakarta with qubits 1,3,4 corresponding to 1,3,5
+    properties = belem_backend.properties()
+    #print(properties)
+    sim_noisy_belem = QasmSimulator.from_backend(belem_backend)
+    #print(sim_noisy_belem)
 
-    for job in jobs:
-        fidelity = tomography_analysis(job.result(), circuit, initial_state)
-        fidelities.append(fidelity)
+    #jakarta = provider.get_backend('ibmq_jakarta')
+    #properties = jakarta.properties()
+    #print(properties)
 
-    print(f'state tomography fidelity = {np.mean(fidelities):.4f}',
-           '\u00B1', f'{np.std(fidelities):.4f}')
+    # Simulated backend based on ibmq_jakarta's device noise profile
+    #sim_noisy_jakarta = QasmSimulator.from_backend(jakarta)
+    run_simulation(sim_noisy_belem)
