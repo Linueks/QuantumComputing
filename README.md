@@ -1,3 +1,3 @@
 # Quantum Machine Learning
 
-Collection of work qml
+Collection of work quantum machine learning topics.
