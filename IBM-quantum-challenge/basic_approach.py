@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import qiskit.ignis.verification.tomography as tomo
 from qiskit.providers.aer import QasmSimulator
 from qiskit.quantum_info import state_fidelity
+plt.style.use('seaborn-whitegrid')
+
 #from qiskit.test.mock import FakeJakarta
 
 # this is dumb...
@@ -251,24 +253,31 @@ def tomography_analysis(result, circuit, target_state):
 
 
 
-def run_simulation(time, trotter_gate_function, backend, trotter_steps=4,
-                end_time=np.pi, draw_circuit=False):
+def run_simulation(time, trotter_gate_function, backend, shots=8192,
+                trotter_steps=4, end_time=np.pi, num_jobs=8, draw_circuit=False,
+                print_result=True):
 
     circuit = generate_circuit(time,
                                trotter_gate_function,
                                trotter_steps=trotter_steps,
                                target_time=end_time,
                                draw_circuit=draw_circuit)
-    jobs = execute_circuit(circuit, backend=backend)
+    jobs = execute_circuit(circuit, shots=shots, repetitions=num_jobs,
+                        backend=backend)
     fidelities = []
 
     for job in jobs:
         fidelity = tomography_analysis(job.result(), circuit, initial_state)
         fidelities.append(fidelity)
 
-    print(f'state tomography fidelity = {np.mean(fidelities):.4f}',
-           '\u00B1', f'{np.std(fidelities):.4f}')
+    fidelity_mean = np.mean(fidelities)
+    fidelity_std = np.std(fidelities)
 
+    if print_result:
+        print(f'state tomography fidelity = {fidelity_mean:.4f}',
+               '\u00B1', f'{fidelity_std:.4f}')
+
+    return fidelity_mean, fidelity_std
 
 
 if __name__=='__main__':
@@ -288,6 +297,8 @@ if __name__=='__main__':
     belem_backend = provider.get_backend('ibmq_belem')                          # has the same topology as Jakarta with qubits 1,3,4 corresponding to 1,3,5
     properties = belem_backend.properties()
     #print(properties)
+    config = belem_backend.configuration()
+    #print(config.backend_name)
     sim_noisy_belem = QasmSimulator.from_backend(belem_backend)
     #print(sim_noisy_belem)
 
@@ -298,27 +309,59 @@ if __name__=='__main__':
     # Simulated backend based on ibmq_jakarta's device noise profile
     #sim_noisy_jakarta = QasmSimulator.from_backend(jakarta)
 
-    trotter_steps = 4
-    end_time = np.pi
+    shots = 8192
+    trotter_steps = 4                                                           # Variable if just running one simulation
+    end_time = np.pi                                                            # Specified in competition
+    min_trotter_steps = 4                                                       # 4 minimum for competition
+    max_trotter_steps = 16
+    num_jobs = 8
+
+    fid_mean = np.zeros(shape=(2, max_trotter_steps - min_trotter_steps + 1))
+    fid_std = np.zeros_like(fid_mean)
 
     #"""
-    run_simulation(time,
-                   construct_trotter_gate_zyxzyx,
-                   sim_noisy_belem,
-                   trotter_steps,
-                   end_time,
-                   draw_circuit=True)
+    for i, steps in enumerate(range(min_trotter_steps, max_trotter_steps+1)):
+        fid_mean[0, i], fid_std[0, i] = run_simulation(time,
+                                                construct_trotter_gate_zyxzyx,
+                                                sim_noisy_belem,
+                                                shots=shots,
+                                                trotter_steps=steps,
+                                                end_time=end_time,
+                                                num_jobs=num_jobs,
+                                                draw_circuit=False)
+
+        fid_mean[1, i], fid_std[1, i] = run_simulation(time,
+                                                construct_trotter_gate_zzyyxx,
+                                                sim_noisy_belem,
+                                                shots=shots,
+                                                trotter_steps=steps,
+                                                end_time=end_time,
+                                                num_jobs=num_jobs,
+                                                draw_circuit=False)
+
+    np.save(f'data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}', fid_mean)
+    np.save(f'data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}', fid_std)
     #"""
 
+    """
+    fid_mean = np.load(f'data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}.npy')
+    fid_std = np.load(f'data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}.npy')
     #"""
-    run_simulation(time,
-                   construct_trotter_gate_zzyyxx,
-                   sim_noisy_belem,
-                   trotter_steps,
-                   end_time,
-                   draw_circuit=True)
-    #"""
+    eb1 = plt.errorbar(range(min_trotter_steps, max_trotter_steps+1),
+                fid_mean[0, :], yerr=fid_std[0, :], errorevery=1,
+                label='Trot zykzyk', ls='--', capsize=5)
+    #eb1[-1][0].set_linestyle('--')
+    eb2 = plt.errorbar(range(min_trotter_steps, max_trotter_steps+1),
+                fid_mean[1, :], yerr=fid_std[1, :], errorevery=1,
+                label='Trot zzyykk', ls='-.', capsize=5)
+    #eb2[-1][0].set_linestyle('-.')
 
+    plt.xlabel('Trotter Steps')
+    plt.ylabel('Fidelity')
+    plt.title(f'Trotter Simulation with {shots} Shots, {num_jobs} Jobs, Backend: {config.backend_name}')
+    plt.legend()
+    plt.savefig(f'figures/trotter_sim_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_numjobs{num_jobs}')
+    plt.show()
     """
     circuit = generate_circuit(time,
                                construct_trotter_gate_zzyyxx,
