@@ -62,7 +62,7 @@ def classical_simulation(initial_state):
 
 
 
-def construct_trotter_gate(t):
+def construct_trotter_gate(t, print_subcircuits=False):
     # decomposition of propagator into quantum gates (copy pasta)
     # I'm not sure I like this way of programming using opflow. Feels like I don't
     # know what's happening behind the scenes. Ask Alessandro
@@ -91,6 +91,11 @@ def construct_trotter_gate(t):
     zz_circuit.rz(2*t, 1)
     zz_circuit.cnot(0, 1)
 
+    if print_subcircuits:
+        print(f'XX-------------------------- \n\n {xx_circuit}')
+        print(f'YY-------------------------- \n\n {yy_circuit}')
+        print(f'ZZ-------------------------- \n\n {zz_circuit}')
+
     # Convert custom quantum circuit into a gate
     xx = xx_circuit.to_instruction()
     yy = yy_circuit.to_instruction()
@@ -114,10 +119,10 @@ def construct_trotter_gate(t):
 
 
 
-def trotterized_simulation(t,
-                           target_time=np.pi,
-                           trotter_steps=6,
-                           draw_circuit=False):
+def generate_circuit(t,
+                     trotter_steps=4,
+                     target_time=np.pi,
+                     draw_circuit=False):
     # generate the full circuit for the trotterized simulation
     # there are also some "fancy / ugly" things happening here
     quantum_register = qk.QuantumRegister(5)                                    # 7 qubits on Jakarta machine. 5 on Belem
@@ -141,8 +146,8 @@ def trotterized_simulation(t,
                                                      quantum_register[4]])
 
     if draw_circuit:
-        #print(final_circuit[-1].decompose())
-        print(final_circuit[-1])
+        print(final_circuit[-1].decompose())
+        #print(final_circuit[-1])
 
     return final_circuit
 
@@ -184,8 +189,13 @@ def tomography_analysis(result, circuit, target_state):
 
 
 
-def run_simulation(backend):
-    circuit = trotterized_simulation(time, draw_circuit=False)
+def run_simulation(time, backend, trotter_steps=4, end_time=np.pi,
+                draw_circuit=False):
+
+    circuit = generate_circuit(time,
+                               trotter_steps=trotter_steps,
+                               target_time=end_time,
+                               draw_circuit=draw_circuit)
     jobs = execute_circuit(circuit, backend=backend)
     fidelities = []
 
@@ -227,4 +237,16 @@ if __name__=='__main__':
 
     # Simulated backend based on ibmq_jakarta's device noise profile
     #sim_noisy_jakarta = QasmSimulator.from_backend(jakarta)
-    run_simulation(sim_noisy_belem)
+
+    trotter_steps = 1
+    end_time = np.pi
+
+    #"""
+    run_simulation(time,
+                   sim_noisy_belem,
+                   trotter_steps,
+                   end_time,
+                   draw_circuit=True)
+    #"""
+
+    #construct_trotter_gate(time, print_subcircuits=True)
