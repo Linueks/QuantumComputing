@@ -12,7 +12,21 @@
 
 
 ## Ideas and Notes
-Meant to be a section to quickly jot down notes and work out ideas
+Meant to be a section to quickly jot down notes and work out ideas.
+
+### Zero Noise Extrapolation Using Mitiq
+Unitary folding is a method for noise scaling that operates directly at the gate level. This makes it easy to use with current quantum computing libraries. It is especially appropriate when the underlying noise scales with the depth and/or the number of gates of a quantum program. 
+
+In Mitiq, folding functions input a circuit and a scale factor, i.e., a floating point value which corresponds to (approximately) how much the length of the circuit is scaled. The minimum scale factor is one (which corresponds to folding no gates). A scale factor of three corresponds to folding all gates locally. Scale factors beyond three begin to fold gates more than once. For local folding, there is a degree of freedom for which gates to fold first. The order in which gates are folded can have an important effect on how the noise is scaled.
+
+[Mitiq Getting Started](https://mitiq.readthedocs.io/en/stable/guide/guide-getting-started.html#guide-getting-started)
+
+
+
+
+
+
+
 
 
 
