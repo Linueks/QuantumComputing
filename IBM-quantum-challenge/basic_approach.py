@@ -309,7 +309,7 @@ if __name__=='__main__':
     # Simulated backend based on ibmq_jakarta's device noise profile
     #sim_noisy_jakarta = QasmSimulator.from_backend(jakarta)
 
-    shots = 8192
+    shots = 2*8192
     trotter_steps = 4                                                           # Variable if just running one simulation
     end_time = np.pi                                                            # Specified in competition
     min_trotter_steps = 4                                                       # 4 minimum for competition
