@@ -8,7 +8,7 @@
 - [ ] Look into usecases for the four "trash" qubits on the Jakarta system.
 - [ ] Look into symmetries of the Hamiltonian and think about what unitary gates preserve this symmetry.
 - [ ] The way of doing the Trotterization is not unique. Test different ways of splitting the product.
-- [ ] Learn about Mitiq Python package for error mitigation / post processing. Zero Noise Extrapolation.
+- [x] Learn about Mitiq Python package for error mitigation / post processing. Zero Noise Extrapolation. (Turned out fruitless)
 
 
 ## Preliminary Results
@@ -28,6 +28,8 @@ Meant to be a section to quickly jot down notes and work out ideas.
 Unitary folding is a method for noise scaling that operates directly at the gate level. This makes it easy to use with current quantum computing libraries. It is especially appropriate when the underlying noise scales with the depth and/or the number of gates of a quantum program. 
 
 In Mitiq, folding functions input a circuit and a scale factor, i.e., a floating point value which corresponds to (approximately) how much the length of the circuit is scaled. The minimum scale factor is one (which corresponds to folding no gates). A scale factor of three corresponds to folding all gates locally. Scale factors beyond three begin to fold gates more than once. For local folding, there is a degree of freedom for which gates to fold first. The order in which gates are folded can have an important effect on how the noise is scaled.
+
+For IBM challenge Mitiq seems like it is not the way to go. Spent most of Jan. 18 messing with the code to get it working and it seems to not give better results at all. In fact the results are much worse. A different final state to the one it should be producing is consequently the output with higher probability than the unmitigated circuit. Not sure why this is. Also not sure if it is possible to use with Qiskit Tomography Circuits. Definitely something to keep in mind in other projects though! Their execute_with_zne function works when you have a backend executor taking a circuit as input with an expectation value as output. 
 
 [Mitiq Getting Started](https://mitiq.readthedocs.io/en/stable/guide/guide-getting-started.html#guide-getting-started)
 [Useful Qiskit Introduction](https://github.com/a-auer/qiskit/blob/master/EntanglementPurification.ipynb)
