@@ -32,6 +32,9 @@ In Mitiq, folding functions input a circuit and a scale factor, i.e., a floating
 For IBM challenge Mitiq seems like it is not the way to go. Spent most of Jan. 18 messing with the code to get it working and it seems to not give better results at all. In fact the results are much worse. A different final state to the one it should be producing is consequently the output with higher probability than the unmitigated circuit. Not sure why this is. Also not sure if it is possible to use with Qiskit Tomography Circuits. Definitely something to keep in mind in other projects though! Their execute_with_zne function works when you have a backend executor taking a circuit as input with an expectation value as output. 
 
 [Mitiq Getting Started](https://mitiq.readthedocs.io/en/stable/guide/guide-getting-started.html#guide-getting-started)
+
+
+### Qiskit Error Mitigation Introduction
 [Useful Qiskit Introduction](https://github.com/a-auer/qiskit/blob/master/EntanglementPurification.ipynb)
 
 
