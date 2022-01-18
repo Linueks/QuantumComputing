@@ -10,6 +10,10 @@
 - [ ] Learn about Mitiq Python package for error mitigation / post processing. Zero Noise Extrapolation.
 
 
+## Preliminary Results
+Section to add some graphs and explanations as the work progresses.
+
+
 
 ## Ideas and Notes
 Meant to be a section to quickly jot down notes and work out ideas.
