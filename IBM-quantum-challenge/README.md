@@ -3,7 +3,7 @@
 
 
 ## Immediate TO-DO
-
+- [x] Implement the most naive implementation of Trotter simulation on noisy backend.
 - [ ] Look into usecases for the four "trash" qubits on the Jakarta system.
 - [ ] Look into symmetries of the Hamiltonian and use these to post process on the end state.
 - [ ] The way of doing the Trotterization is not unique. Test different ways of splitting the product.
