@@ -1,14 +1,15 @@
 """
 Starting with implementation provided by IBM at:
 https://github.com/qiskit-community/open-science-prize-2021/blob/main/ibmq-qsim-challenge.ipynb
+@linueks
 """
 import numpy as np
-import qiskit as qk
+import mitiq as mt
 import time as time
+import qiskit as qk
 import qiskit.opflow as opflow
 import matplotlib.pyplot as plt
 import qiskit.ignis.verification.tomography as tomo
-from qiskit.providers.aer import QasmSimulator
 from qiskit.quantum_info import state_fidelity
 plt.style.use('seaborn-whitegrid')
 
@@ -20,254 +21,295 @@ warnings.filterwarnings('ignore')
 
 
 
-def heisenberg_chain():
-    # define Heisenberg XXX hamiltonian opflow way
-    # defining operators using qiskit opflow
-    identity = opflow.I
-    pauli_x = opflow.X
-    pauli_y = opflow.Y
-    pauli_z = opflow.Z
+def xx_subcircuit(
+    time,
+    quantum_register,
+    qubit1,
+    qubit2,
+):
+    """
+    Subcircuit used in Trotter decomposition
 
-    x_interaction = (identity^pauli_x^pauli_x) + (pauli_x^pauli_x^identity)
-    y_interaction = (identity^pauli_y^pauli_y) + (pauli_y^pauli_y^identity)
-    z_interaction = (identity^pauli_z^pauli_z) + (pauli_z^pauli_z^identity)
-    total_interaction = x_interaction + y_interaction + z_interaction
+    Inputs:
+        time: qiskit.circuit.Parameter
+        quantum_register: qiskit.circuit.QuantumRegister
+        qubit1: int
+        qubit2: int
 
-    return total_interaction
+    returns:
+        quantum_circuit: qiskit.circuit.QuantumCircuit
+    """
 
+    # Like Alessandro says this might even be too flexible
+    quantum_circuit = qk.QuantumCircuit(quantum_register)
+    quantum_circuit.ry(np.pi/2, [qubit1, qubit2])
+    quantum_circuit.cnot(qubit1, qubit2)
+    quantum_circuit.rz(2*time, qubit2)
+    quantum_circuit.cnot(qubit1, qubit2)
+    quantum_circuit.ry(-np.pi/2, [qubit1, qubit2])
+    quantum_circuit.barrier()
 
-
-def propagator(time):
-    # define the time evolution operator opflow way
-    Hamiltonian = heisenberg_chain()
-    time_evolution_unitary = (time * Hamiltonian).exp_i()
-
-    return time_evolution_unitary
-
-
-
-def classical_simulation(initial_state):
-    # A copy paste from the notebook just to have it here
-
-    time_points = np.linspace(0, np.pi, 100)
-    probability_110 = np.zeros_like(time_points)
-
-    for i, t in enumerate(time_points):
-        probability_110[i] = np.abs((~initial_state @ propagator(float(t)) \
-                                    @ initial_state).eval())**2
-
-    plt.plot(time_points, probability_110)
-    plt.xlabel('Time')
-    plt.ylabel(r'Probability of state $|110\rangle$')
-    plt.title(r'Evolution of state $|110\rangle$ under $H_{XXX}$')
-    plt.show()
+    return quantum_circuit
 
 
 
-def construct_trotter_gate_zyxzyx(t, print_subcircuits=False,
-                                reverse_circuit=False):
-    # decomposition of propagator into quantum gates (copy pasta)
-    # I'm not sure I like this way of programming using opflow. Feels like I don't
-    # know what's happening behind the scenes. Ask Alessandro
+def yy_subcircuit(
+    time,
+    quantum_register,
+    qubit1,
+    qubit2,
+):
+    """
+    Subcircuit used in Trotter decomposition
 
-    # build three components of single trotter step: xx, yy, zz (ugly code)
-    xx_register = qk.QuantumRegister(2)
-    xx_circuit = qk.QuantumCircuit(xx_register, name='xx')
-    yy_register = qk.QuantumRegister(2)
-    yy_circuit = qk.QuantumCircuit(yy_register, name='yy')
-    zz_register = qk.QuantumRegister(2)
-    zz_circuit = qk.QuantumCircuit(zz_register, name='zz')
+    Inputs:
+        time: qiskit.circuit.Parameter
+        quantum_register: qiskit.circuit.QuantumRegister
+        qubit1: int
+        qubit2: int
 
-    xx_circuit.ry(np.pi/2, [0,1])
-    xx_circuit.cnot(0, 1)
-    xx_circuit.rz(2*t, 1)
-    xx_circuit.cnot(0, 1)
-    xx_circuit.ry(-np.pi/2, [0,1])
+    returns:
+        quantum_circuit: qiskit.circuit.QuantumCircuit
+    """
 
-    yy_circuit.rx(np.pi/2, [0,1])
-    yy_circuit.cnot(0, 1)
-    yy_circuit.rz(2*t, 1)
-    yy_circuit.cnot(0, 1)
-    yy_circuit.rx(-np.pi/2, [0,1])
+    quantum_circuit = qk.QuantumCircuit(quantum_register)
+    quantum_circuit.rx(np.pi/2, [qubit1, qubit2])
+    quantum_circuit.cnot(qubit1, qubit2)
+    quantum_circuit.rz(2*time, qubit2)
+    quantum_circuit.cnot(qubit1, qubit2)
+    quantum_circuit.rx(-np.pi/2, [qubit1, qubit2])
+    quantum_circuit.barrier()
 
-    zz_circuit.cnot(0, 1)
-    zz_circuit.rz(2*t, 1)
-    zz_circuit.cnot(0, 1)
-
-    if print_subcircuits:
-        print(f'XX-------------------------- \n\n {xx_circuit}')
-        print(f'YY-------------------------- \n\n {yy_circuit}')
-        print(f'ZZ-------------------------- \n\n {zz_circuit}')
-
-    # Convert custom quantum circuit into a gate
-    xx = xx_circuit.to_instruction()
-    yy = yy_circuit.to_instruction()
-    zz = zz_circuit.to_instruction()
-
-    # Combine subcircuits into a single multiqubit gate representing a single trotter step
-    num_qubits = 3
-
-    trot_register = qk.QuantumRegister(num_qubits)
-    trot_circuit = qk.QuantumCircuit(trot_register, name='trot zykzyk')
-
-    for i in range(0, num_qubits-1):
-        trot_circuit.append(zz, [trot_register[i], trot_register[i+1]])
-        trot_circuit.append(yy, [trot_register[i], trot_register[i+1]])
-        trot_circuit.append(xx, [trot_register[i], trot_register[i+1]])
-
-    # Convert custom quantum circuit into a gate
-    trotter_gate = trot_circuit.to_instruction()
-
-    if reverse_circuit:
-        return trotter_gate.inverse()
-
-    else:
-        return trotter_gate
+    return quantum_circuit
 
 
 
-def construct_trotter_gate_zzyyxx(t, reverse_circuit=False):
-    xx_register = qk.QuantumRegister(2)
-    xx_circuit = qk.QuantumCircuit(xx_register, name='xx')
-    yy_register = qk.QuantumRegister(2)
-    yy_circuit = qk.QuantumCircuit(yy_register, name='yy')
-    zz_register = qk.QuantumRegister(2)
-    zz_circuit = qk.QuantumCircuit(zz_register, name='zz')
+def zz_subcircuit(
+    time,
+    quantum_register,
+    qubit1,
+    qubit2,
+):
+    """
+    Subcircuit used in Trotter decomposition
 
-    xx_circuit.ry(np.pi/2, [0,1])
-    xx_circuit.cnot(0, 1)
-    xx_circuit.rz(2*t, 1)
-    xx_circuit.cnot(0, 1)
-    xx_circuit.ry(-np.pi/2, [0,1])
+    Inputs:
+        time: qiskit.circuit.Parameter
+        quantum_register: qiskit.circuit.QuantumRegister
+        qubit1: int
+        qubit2: int
 
-    yy_circuit.rx(np.pi/2, [0,1])
-    yy_circuit.cnot(0, 1)
-    yy_circuit.rz(2*t, 1)
-    yy_circuit.cnot(0, 1)
-    yy_circuit.rx(-np.pi/2, [0,1])
+    returns:
+        quantum_circuit: qiskit.circuit.QuantumCircuit
+    """
 
-    zz_circuit.cnot(0, 1)
-    zz_circuit.rz(2*t, 1)
-    zz_circuit.cnot(0, 1)
+    quantum_circuit = qk.QuantumCircuit(quantum_register)
+    quantum_circuit.cnot(qubit1, qubit2)
+    quantum_circuit.rz(2*time, qubit2)
+    quantum_circuit.cnot(qubit1, qubit2)
+    quantum_circuit.barrier()
 
-    xx = xx_circuit.to_instruction()
-    yy = yy_circuit.to_instruction()
-    zz = zz_circuit.to_instruction()
-
-
-    # Combine subcircuits into a single multiqubit gate representing a single trotter step
-    num_qubits = 3
-
-    trot_register = qk.QuantumRegister(num_qubits)
-    trot_circuit = qk.QuantumCircuit(trot_register, name='trot zzyykk')
-
-    trot_circuit.append(zz, [trot_register[0], trot_register[1]])
-    trot_circuit.append(zz, [trot_register[1], trot_register[2]])
-
-    trot_circuit.append(yy, [trot_register[0], trot_register[1]])
-    trot_circuit.append(yy, [trot_register[1], trot_register[2]])
-
-    trot_circuit.append(xx, [trot_register[0], trot_register[1]])
-    trot_circuit.append(xx, [trot_register[1], trot_register[2]])
-
-
-    # Convert custom quantum circuit into a gate
-    trotter_gate = trot_circuit.to_instruction()
-
-    if reverse_circuit:
-        return trotter_gate.inverse()
-
-    else:
-        return trotter_gate
+    return quantum_circuit
 
 
 
-def generate_circuit(t,
-                     trotter_gate_function,
-                     trotter_steps=4,
-                     target_time=np.pi,
-                     draw_circuit=False):
-    # generate the full circuit for the trotterized simulation
-    # there are also some "fancy / ugly" things happening here
-    quantum_register = qk.QuantumRegister(5)                                    # 7 qubits on Jakarta machine. 5 on Belem
+def trotter_step_zyxzyx(
+    time,
+    quantum_register,
+    qubit1,
+    qubit2,
+):
+    """
+    One Trotter step build out of xx, yy, zz subcircuits. This approach might
+    prove worse than just hardcoding everything when it comes time to optimize.
+
+    Inputs:
+        time: qiskit.circuit.Parameter
+        quantum_register: qiskit.circuit.QuantumRegister
+        qubit1: int
+        qubit2: int
+
+    returns:
+        quantum_circuit: qiskit.circuit.QuantumCircuit
+    """
+
+    quantum_circuit = qk.QuantumCircuit(quantum_register)
+    quantum_circuit += zz_subcircuit(time, quantum_register, qubit1, qubit2)
+    quantum_circuit += yy_subcircuit(time, quantum_register, qubit1, qubit2)
+    quantum_circuit += xx_subcircuit(time, quantum_register, qubit1, qubit2)
+    quantum_circuit += zz_subcircuit(time, quantum_register, qubit1+2, qubit2+2)
+    quantum_circuit += yy_subcircuit(time, quantum_register, qubit1+2, qubit2+2)
+    quantum_circuit += xx_subcircuit(time, quantum_register, qubit1+2, qubit2+2)
+
+    return quantum_circuit
+
+
+
+def trotter_step_zzyyxx(
+    time,
+    quantum_register,
+    qubit1,
+    qubit2,
+):
+    """
+    One Trotter step build out of xx, yy, zz subcircuits. This approach might
+    prove worse than just hardcoding everything when it comes time to optimize.
+
+    Inputs:
+        time: qiskit.circuit.Parameter
+        quantum_register: qiskit.circuit.QuantumRegister
+        qubit1: int
+        qubit2: int
+
+    returns:
+        quantum_circuit: qiskit.circuit.QuantumCircuit
+    """
+
+    quantum_circuit = qk.QuantumCircuit(quantum_register)
+    quantum_circuit += zz_subcircuit(time, quantum_register, qubit1, qubit2)
+    quantum_circuit += zz_subcircuit(time, quantum_register, qubit1+2, qubit2+2)
+    quantum_circuit += yy_subcircuit(time, quantum_register, qubit1, qubit2)
+    quantum_circuit += yy_subcircuit(time, quantum_register, qubit1+2, qubit2+2)
+    quantum_circuit += xx_subcircuit(time, quantum_register, qubit1, qubit2)
+    quantum_circuit += xx_subcircuit(time, quantum_register, qubit1+2, qubit2+2)
+
+    return quantum_circuit
+
+
+
+def build_circuit(
+    time,
+    trotter_step_function,
+    trotter_steps=4,
+    target_time=np.pi,
+    draw_circuit=False,
+):
+    """
+    Function to add specified amount of Trotter steps to a qiskit circuit and
+    set correct simulation for each step given desired target time.
+
+    Input:
+        time: qiskit.circuit.Parameter
+        trotter_step_function: Python Function returning qiskit.circuit
+        trotter_steps: int
+        target_time: float
+        draw_circuit: bool
+        show_all_tomography_circuits: bool
+
+    Returns:
+        quantum_circuit: qiskit.circuit.QuantumCircuit
+        quantum_register: qiskit.circuit.QuantumRegister
+    """
+    quantum_register = qk.QuantumRegister(7)                                    # 7 qubits on Jakarta machine. 5 on Belem
     quantum_circuit = qk.QuantumCircuit(quantum_register)
 
     # set up initial state |110>
-    quantum_circuit.x([3, 4])                                                   # Remember to switch back once access to Jakarta
-    single_trotter_step = trotter_gate_function(t)
+    quantum_circuit.x([3, 5])                                                   # Remember to switch back once access to Jakarta
+    quantum_circuit.barrier()
 
-    for n in range(trotter_steps):
-        quantum_circuit.append(single_trotter_step,                             # Switch
-                            [quantum_register[1],
-                             quantum_register[3],
-                             quantum_register[4]])
+    qubit1 = 1
+    qubit2 = 3
+    #measured_qubits = [1, 3, 4]
 
-        quantum_circuit = quantum_circuit.bind_parameters(
-                            {t: target_time/trotter_steps})
-        final_circuit = tomo.state_tomography_circuits(quantum_circuit,         # Switch
-                                                    [quantum_register[1],
-                                                     quantum_register[3],
-                                                     quantum_register[4]])
+    for step in range(trotter_steps):
+        single_trotter_step = trotter_step_function(
+            time,
+            quantum_register,
+            qubit1,
+            qubit2,
+        )
+        quantum_circuit += single_trotter_step
+        quantum_circuit.barrier()
+
+    #quantum_circuit.measure(measured_qubits, [2, 1, 0])
+    quantum_circuit = quantum_circuit.bind_parameters(
+        {time: target_time/trotter_steps}
+    )
 
     if draw_circuit:
-        print(final_circuit[-1].decompose())
-        #print(final_circuit[-1])
-
-    return final_circuit
-
+        quantum_circuit.draw(output='mpl')
+        plt.tight_layout()
+        plt.show()
 
 
-def execute_circuit(circuit,
-                    shots=8192,
-                    repetitions=8,
-                    backend=QasmSimulator()):
-    # wrapper function to run jobs. Assumes QasmSimulator is imported as such.
-    jobs = []
-    for i in range(repetitions):
-        job = qk.execute(circuit, backend, shots=shots)
-        print(f'Job ID: {job.job_id()}')
-        jobs.append(job)
-
-    for job in jobs:
-        qk.tools.monitor.job_monitor(job)
-
-        # this thing seems stupid too
-        try:
-            if job.error_message() is not None:
-                print(job.error_message())
-        except:
-            pass
-
-    return jobs
+    return quantum_circuit, quantum_register
 
 
 
-def tomography_analysis(result, circuit, target_state):
-    # assumes the target state is given as a qiskit opflow state
-    target_state_matrix = target_state.to_matrix()
-    tomography_fitter = tomo.StateTomographyFitter(result, circuit)
-    rho_fit = tomography_fitter.fit(method='lstsq')
-    fidelity = qk.quantum_info.state_fidelity(rho_fit, target_state_matrix)
+def generate_tomography_circuits(
+    quantum_circuit,
+    quantum_register,
+    draw_all_tomography_circuits=False,
+):
+    """
+    Generates 27 different quantum circuits to perform complete quantum state
+    tomography.
 
-    return fidelity
+    Inputs:
+        quantum_circuit: qiskit.circuit.QuantumCircuit
+        quantum_register: qiskit.circuit.QuantumRegister
+        draw_all_tomography_circuits: bool
+
+    Returns:
+        tomography_circuits: list of qiskit.circuit.QuantumCircuit
+    """
+    measured_qubits = [
+        quantum_register[1],
+        quantum_register[3],
+        quantum_register[5]
+    ]                                                                           # Switch back when going to Jakarta
+    tomography_circuits = tomo.state_tomography_circuits(
+        quantum_circuit,
+        measured_qubits
+    )
+    if draw_all_tomography_circuits:
+        for i in range(len(quantum_circuit)):
+            quantum_circuit[i].draw(output='mpl')
+            plt.tight_layout()
+        plt.show()
+
+    return tomography_circuits
 
 
 
-def run_simulation(time, trotter_gate_function, backend, shots=8192,
-                trotter_steps=4, end_time=np.pi, num_jobs=8, draw_circuit=False,
-                print_result=True):
+def execute_circuit(
+    quantum_circuit,
+    backend,
+    shots,
+):
+    """
+    Putting this into separate function in case I want to add more arguments
+    later when optimizing. Looks a bit pointless as of now.
+    """
+    job = qk.execute(quantum_circuit, backend, shots=shots)
 
-    circuit = generate_circuit(time,
-                               trotter_gate_function,
-                               trotter_steps=trotter_steps,
-                               target_time=end_time,
-                               draw_circuit=draw_circuit)
-    jobs = execute_circuit(circuit, shots=shots, repetitions=num_jobs,
-                        backend=backend)
+    return job
+
+
+
+def calculate_fidelity(
+    jobs,
+    tomography_circuits,
+    print_result=True,
+):
+    ket_zero = opflow.Zero
+    ket_one = opflow.One
+    final_state_target = ket_one^ket_one^ket_zero
+    target_state_matrix = final_state_target.to_matrix()
+
     fidelities = []
 
     for job in jobs:
-        fidelity = tomography_analysis(job.result(), circuit, initial_state)
+        result = job.result()
+        tomography_fitter = tomo.StateTomographyFitter(
+            result,
+            tomography_circuits,
+        )
+        rho_fit = tomography_fitter.fit(method='lstsq')
+        fidelity = qk.quantum_info.state_fidelity(
+            rho_fit,
+            target_state_matrix
+        )
         fidelities.append(fidelity)
 
     fidelity_mean = np.mean(fidelities)
@@ -280,92 +322,153 @@ def run_simulation(time, trotter_gate_function, backend, shots=8192,
     return fidelity_mean, fidelity_std
 
 
+
+def run_experiments(
+    time,
+    backend,
+    trotter_step_list,
+    min_trotter_steps,
+    max_trotter_steps,
+    target_time=np.pi,
+    shots=8192,
+    repetitions=8,
+    draw_circuit=True,
+):
+    """
+    Container function to collect and output results for everything interesting
+    to calculate. Want to make it run over trotter steps, decompositions,
+    repetitions.
+    """
+
+    n_decompositions = len(trotter_step_list)
+
+    fid_means = np.zeros(
+        shape=(
+            n_decompositions,
+            max_trotter_steps - min_trotter_steps + 1
+        )
+    )
+    fid_stdevs = np.zeros_like(fid_means)
+
+    for i, decomp in enumerate(trotter_step_list):
+        for j, steps in enumerate(range(min_trotter_steps,max_trotter_steps+1)):
+            circuit, register = build_circuit(
+                time,
+                decomp,
+                trotter_steps=steps,
+                target_time=target_time,
+                draw_circuit=draw_circuit,
+            )
+            tomography_circuits = generate_tomography_circuits(
+                circuit,
+                register,
+                draw_all_tomography_circuits=False,
+            )
+            jobs = []
+            for k in range(repetitions):
+                job = execute_circuit(
+                    tomography_circuits,
+                    backend,
+                    shots,
+                )
+                print(f'Job ID: {job.job_id()}')
+                jobs.append(job)
+
+                qk.tools.monitor.job_monitor(job)
+                try:
+                    if job.error_message() is not None:
+                        print(job.error_message())
+                except:
+                    pass
+
+
+            fid_means[i, j], fid_stdevs[i, j] = calculate_fidelity(
+                jobs,
+                tomography_circuits,
+                print_result=True,
+            )
+
+    return fid_means, fid_stdevs
+
+
+
 if __name__=='__main__':
+    provider = qk.IBMQ.load_account()
+
+    provider = qk.IBMQ.get_provider(hub='ibm-q-community', group='ibmquantumawards', project='open-science-22')
+    jakarta_backend = provider.get_backend('ibmq_jakarta')
+    config = jakarta_backend.configuration()
+
+    #provider = qk.IBMQ.get_provider(hub='ibm-q', group='open', project='main')
+    #belem_backend = provider.get_backend('ibmq_belem')                          # has the same topology as Jakarta with qubits 1,3,4 corresponding to 1,3,5
+    #config = belem_backend.configuration()
+
+    # set up qiskit simulators
+    #sim_noisy_belem = qk.providers.aer.QasmSimulator.from_backend(belem_backend)
+    #sim_noiseless_belem = qk.providers.aer.QasmSimulator()
+    sim_jakarta_noiseless = qk.providers.aer.QasmSimulator()
+    sim_noisy_jakarta = qk.providers.aer.QasmSimulator.from_backend(jakarta_backend)
+
     ket_zero = opflow.Zero
     ket_one = opflow.One
     initial_state = ket_one^ket_one^ket_zero
-
-    #classical_simulation(initial_state)
     time = qk.circuit.Parameter('t')
-
-    # set up qiskit simulators
-    jakarta_noiseless = QasmSimulator()
-
-    provider = qk.IBMQ.load_account()
-    provider = qk.IBMQ.get_provider(hub='ibm-q', group='open', project='main')
-    #print(provider.backends())
-    belem_backend = provider.get_backend('ibmq_belem')                          # has the same topology as Jakarta with qubits 1,3,4 corresponding to 1,3,5
-    properties = belem_backend.properties()
-    #print(properties)
-    config = belem_backend.configuration()
-    #print(config.backend_name)
-    sim_noisy_belem = QasmSimulator.from_backend(belem_backend)
-    #print(sim_noisy_belem)
-
-    #jakarta = provider.get_backend('ibmq_jakarta')
-    #properties = jakarta.properties()
-    #print(properties)
-
-    # Simulated backend based on ibmq_jakarta's device noise profile
-    #sim_noisy_jakarta = QasmSimulator.from_backend(jakarta)
-
-    shots = 2*8192
-    trotter_steps = 4                                                           # Variable if just running one simulation
+    shots = 8192
+    trotter_steps = 1                                                           # Variable if just running one simulation
     end_time = np.pi                                                            # Specified in competition
     min_trotter_steps = 4                                                       # 4 minimum for competition
     max_trotter_steps = 16
     num_jobs = 8
+    decompositions = [trotter_step_zyxzyx, trotter_step_zzyyxx]
 
-    fid_mean = np.zeros(shape=(2, max_trotter_steps - min_trotter_steps + 1))
-    fid_std = np.zeros_like(fid_mean)
+    """
+    circuit, register = build_circuit(
+        time,
+        trotter_step_zyxzyx,
+        trotter_steps=trotter_steps,
+        target_time=end_time,
+        draw_circuit=True
+    )
+    """
+
 
     #"""
-    for i, steps in enumerate(range(min_trotter_steps, max_trotter_steps+1)):
-        fid_mean[0, i], fid_std[0, i] = run_simulation(time,
-                                                construct_trotter_gate_zyxzyx,
-                                                sim_noisy_belem,
-                                                shots=shots,
-                                                trotter_steps=steps,
-                                                end_time=end_time,
-                                                num_jobs=num_jobs,
-                                                draw_circuit=False)
-
-        fid_mean[1, i], fid_std[1, i] = run_simulation(time,
-                                                construct_trotter_gate_zzyyxx,
-                                                sim_noisy_belem,
-                                                shots=shots,
-                                                trotter_steps=steps,
-                                                end_time=end_time,
-                                                num_jobs=num_jobs,
-                                                draw_circuit=False)
-
-    np.save(f'data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}', fid_mean)
-    np.save(f'data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}', fid_std)
+    fid_means, fid_stdevs = run_experiments(
+        time,
+        sim_noisy_jakarta,
+        decompositions,
+        min_trotter_steps,
+        max_trotter_steps,
+        target_time=end_time,
+        shots=shots,
+        repetitions=num_jobs,
+        draw_circuit=False,
+    )
     #"""
+
+
+
+    np.save(f'data/new_fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}', fid_means)
+    np.save(f'data/new_fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}', fid_stdevs)
+
 
     """
     fid_mean = np.load(f'data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}.npy')
     fid_std = np.load(f'data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}.npy')
     #"""
+
+
     eb1 = plt.errorbar(range(min_trotter_steps, max_trotter_steps+1),
-                fid_mean[0, :], yerr=fid_std[0, :], errorevery=1,
-                label='Trot zykzyk', ls='--', capsize=5)
-    #eb1[-1][0].set_linestyle('--')
+                fid_means[0, :], yerr=fid_stdevs[0, :], errorevery=1,
+                label='Trot zyxzyx', ls='--', capsize=5)
+
     eb2 = plt.errorbar(range(min_trotter_steps, max_trotter_steps+1),
-                fid_mean[1, :], yerr=fid_std[1, :], errorevery=1,
-                label='Trot zzyykk', ls='-.', capsize=5)
-    #eb2[-1][0].set_linestyle('-.')
+                fid_means[1, :], yerr=fid_stdevs[1, :], errorevery=1,
+                label='Trot zzyyxx', ls='-.', capsize=5)
 
     plt.xlabel('Trotter Steps')
     plt.ylabel('Fidelity')
     plt.title(f'Trotter Simulation with {shots} Shots, {num_jobs} Jobs, Backend: {config.backend_name}')
     plt.legend()
-    plt.savefig(f'figures/trotter_sim_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_numjobs{num_jobs}')
+    plt.savefig(f'figures/new_trotter_sim_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_numjobs{num_jobs}')
     plt.show()
-    """
-    circuit = generate_circuit(time,
-                               construct_trotter_gate_zzyyxx,
-                               trotter_steps=1,
-                               draw_circuit=True)
-    #"""
-    #construct_trotter_gate(time, print_subcircuits=True)
