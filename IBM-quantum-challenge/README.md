@@ -12,7 +12,7 @@
 
 
 ## Preliminary Results
-Below is the absolute first result of testing the most basic implementation of our Trotterization. The results are not very good yet, however, they do meet the criteria for entry into the competition which is nice! I tested changing the ordering of the ZZ, XX, YY gates in the single trotter step circuit. The result is pretty obvious and doesn't really tell us much. We see it is better to first do all the operations on one set of qubits and then the other. We observe for the cyclical trotter decomposition that around 7-8 trotter steps performs optimally.
+Below is the absolute first result of testing the most basic implementation of our Trotterization. The results are not very good yet, however, they do meet the criteria for entry into the competition which is nice! I tested changing the ordering of the ZZ, XX, YY gates in the single trotter step circuit. We see it is better to first do all the operations on one set of qubits and then the other. We observe for the cyclical trotter decomposition that around 7-8 trotter steps performs optimally.
 
 <p align="center">
   <img width="400" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/trotter_sim_4_16_shots16384_numjobs8.png">
