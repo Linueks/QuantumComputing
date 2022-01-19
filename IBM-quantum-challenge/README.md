@@ -14,6 +14,8 @@
 ## Preliminary Results
 
 ### Trotter Decompositions
+Following are the two first different Trotter decompositions investigated. Left one is dubbed zyxzyx or cyclical while the right one is dubbed zzyyxx or ladder.
+
 <p align="left">
   <img width="500" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/zyxzyx_trotter_step.png">
   <img width="500" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/zzyyxx_trotter_step.png">
