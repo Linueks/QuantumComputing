@@ -15,8 +15,8 @@
 
 ### Trotter Decompositions
 <p align="left">
-  <img width="480" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/zyxzyx_trotter_step.png">
-  <img width="480" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/zzyyxx_trotter_step.png">
+  <img width="540" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/zyxzyx_trotter_step.png">
+  <img width="540" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/zzyyxx_trotter_step.png">
 </p>
 
 
