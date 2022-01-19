@@ -14,6 +14,8 @@
 ## Preliminary Results
 
 ### Trotter Decompositions
+Following are the two first different Trotter decompositions investigated. 
+
 <p align="left">
   <img width="500" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/zyxzyx_trotter_step.png">
   <img width="500" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/zzyyxx_trotter_step.png">
