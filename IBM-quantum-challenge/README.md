@@ -15,11 +15,10 @@
 
 ### Trotter Decompositions
 <p align="left">
-  <img width="400" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/zyxzyx_trotter_step.png">
+  <img width="480" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/zyxzyx_trotter_step.png">
+  <img width="480" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/zzyyxx_trotter_step.png">
 </p>
-<p align="right">
-  <img width="400" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/zzyyxx_trotter_step.png">
-</p>
+
 
 
 Below is the absolute first result of testing the most basic implementation of our Trotterization. The results are not very good yet, however, they do meet the criteria for entry into the competition which is nice! I tested changing the ordering of the ZZ, XX, YY gates in the single trotter step circuit. We see it is better to first do all the operations on one set of qubits and then the other. We observe for the cyclical trotter decomposition that around 7-8 trotter steps performs optimally.
