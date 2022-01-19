@@ -21,13 +21,17 @@ Following are the two first different Trotter decompositions investigated. Left 
   <img width="500" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/zzyyxx_trotter_step.png">
 </p>
 
+Some things one can notice is that in the ladder formulation there are some gates that cancel against each other. Implementing the decomposition with these explicitly cancelled out we get.
 
 
-Below is the absolute first result of testing the most basic implementation of our Trotterization. The results are not very good yet, however, they do meet the criteria for entry into the competition which is nice! I tested changing the ordering of the ZZ, XX, YY gates in the single trotter step circuit. We see it is better to first do all the operations on one set of qubits and then the other. We observe for the cyclical trotter decomposition that around 7-8 trotter steps performs optimally.
+
+Below is the absolute first result of testing the most basic implementation of our Trotterization. The results are not very good yet, however, they do meet the criteria for entry into the competition which is nice! I tested changing the ordering of the ZZ, XX, YY gates in the single trotter step circuit. We see it is better to first do all the operations on one set of qubits and then the other. We observe for the cyclical trotter decomposition that around 7-8 trotter steps performs optimally. This is the result on a noisy backend with absolutely no cancellations or care performed on either decomposition.
 
 <p align="center">
   <img width="400" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/trotter_sim_4_16_shots8192_numjobs8.png">
 </p>
+
+
 
 
 
