@@ -11,13 +11,9 @@ import qiskit.opflow as opflow
 import matplotlib.pyplot as plt
 import qiskit.ignis.verification.tomography as tomo
 from qiskit.quantum_info import state_fidelity
-plt.style.use('seaborn-whitegrid')
-
-#from qiskit.test.mock import FakeJakarta
-
-# this is dumb...
 import warnings
 warnings.filterwarnings('ignore')
+plt.style.use('seaborn-whitegrid')
 
 
 
@@ -116,8 +112,7 @@ def zz_subcircuit(
 def trotter_step_zyxzyx(
     time,
     quantum_register,
-    qubit1,
-    qubit2,
+    active_qubits,
 ):
     """
     One Trotter step build out of xx, yy, zz subcircuits. This approach might
@@ -126,8 +121,7 @@ def trotter_step_zyxzyx(
     Inputs:
         time: qiskit.circuit.Parameter
         quantum_register: qiskit.circuit.QuantumRegister
-        qubit1: int
-        qubit2: int
+        active_qubits: list of qubit positions
 
     returns:
         quantum_circuit: qiskit.circuit.QuantumCircuit
@@ -148,8 +142,7 @@ def trotter_step_zyxzyx(
 def trotter_step_zzyyxx(
     time,
     quantum_register,
-    qubit1,
-    qubit2,
+    active_qubits,
 ):
     """
     One Trotter step build out of xx, yy, zz subcircuits. This approach might
@@ -158,8 +151,7 @@ def trotter_step_zzyyxx(
     Inputs:
         time: qiskit.circuit.Parameter
         quantum_register: qiskit.circuit.QuantumRegister
-        qubit1: int
-        qubit2: int
+        active_qubits: list of qubit positions
 
     returns:
         quantum_circuit: qiskit.circuit.QuantumCircuit
@@ -183,6 +175,8 @@ def build_circuit(
     trotter_steps=4,
     target_time=np.pi,
     draw_circuit=False,
+    n_qubits=7,
+    active_qubits=[1, 3, 5],
 ):
     """
     Function to add specified amount of Trotter steps to a qiskit circuit and
@@ -195,28 +189,27 @@ def build_circuit(
         target_time: float
         draw_circuit: bool
         show_all_tomography_circuits: bool
+        n_qubits: int
+        active_qubits: list of qubit positions
 
     Returns:
         quantum_circuit: qiskit.circuit.QuantumCircuit
         quantum_register: qiskit.circuit.QuantumRegister
     """
-    quantum_register = qk.QuantumRegister(7)                                    # 7 qubits on Jakarta machine. 5 on Belem
+    quantum_register = qk.QuantumRegister(n_qubits)                       # 7 qubits on Jakarta machine. 5 on Belem
     quantum_circuit = qk.QuantumCircuit(quantum_register)
 
-    # set up initial state |110>
-    quantum_circuit.x([3, 5])                                                   # Remember to switch back once access to Jakarta
-    quantum_circuit.barrier()
-
-    qubit1 = 1
-    qubit2 = 3
-    #measured_qubits = [1, 3, 4]
+    if n_qubits == 7:
+        # yalla fix so I can use the function with other qubit numbers.
+        # set up initial state |110>
+        quantum_circuit.x([3, 5])                                             # Remember to switch back once access to Jakarta
+        quantum_circuit.barrier()
 
     for step in range(trotter_steps):
         single_trotter_step = trotter_step_function(
             time,
             quantum_register,
-            qubit1,
-            qubit2,
+            active_qubits,
         )
         quantum_circuit += single_trotter_step
         quantum_circuit.barrier()
