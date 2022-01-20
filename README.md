@@ -1,3 +1,3 @@
-# Quantum Machine Learning
+# Quantum Computing and Quantum Machine Learning
 
-Collection of work quantum machine learning topics.
+Collection of coursework / projects on Quantum Computing (QC) and Quantum Machine Learning (QML).
