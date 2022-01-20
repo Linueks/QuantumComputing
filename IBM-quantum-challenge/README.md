@@ -7,7 +7,7 @@
 - [ ] Think about preserved quantities and symmetries of the initial and final state.
 - [ ] Look into usecases for the four "trash" qubits on the Jakarta system.
 - [ ] Look into symmetries of the Hamiltonian and think about what unitary gates preserve this symmetry.
-- [ ] The way of doing the Trotterization is not unique. Test different ways of splitting the product.
+- [x] The way of doing the Trotterization is not unique. Test different ways of splitting the product.
 - [x] Learn about Mitiq Python package for error mitigation / post processing. Zero Noise Extrapolation. (Turned out fruitless)
 
 
