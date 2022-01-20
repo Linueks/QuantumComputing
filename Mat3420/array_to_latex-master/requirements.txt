@@ -1,0 +1,4 @@
+numpy
+scipy
+pandas
+array_to_latex
