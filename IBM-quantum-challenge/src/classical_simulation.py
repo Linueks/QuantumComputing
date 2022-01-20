@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 
-def heisenberg_chain():
+def hamiltonian_xxx():
     # define Heisenberg XXX hamiltonian opflow way
     # defining operators using qiskit opflow
     identity = opflow.I
@@ -24,8 +24,8 @@ def heisenberg_chain():
 
 def propagator(time):
     # define the time evolution operator opflow way
-    Hamiltonian = heisenberg_chain()
-    time_evolution_unitary = (time * Hamiltonian).exp_i()
+    hamiltonian = hamiltonian_xxx()
+    time_evolution_unitary = (time * hamiltonian).exp_i()
 
     return time_evolution_unitary
 
