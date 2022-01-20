@@ -448,8 +448,8 @@ if __name__=='__main__':
 
 
 
-    np.save(f'data/new_fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}', fid_means)
-    np.save(f'data/new_fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}', fid_stdevs)
+    np.save(f'data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}', fid_means)
+    np.save(f'data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}', fid_stdevs)
 
 
     """
@@ -470,5 +470,5 @@ if __name__=='__main__':
     plt.ylabel('Fidelity')
     plt.title(f'Trotter Simulation with {shots} Shots, {num_jobs} Jobs, Backend: {config.backend_name}')
     plt.legend()
-    plt.savefig(f'figures/new_trotter_sim_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_numjobs{num_jobs}')
+    plt.savefig(f'figures/trotter_sim_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_numjobs{num_jobs}')
     plt.show()
