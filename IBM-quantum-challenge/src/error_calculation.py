@@ -79,15 +79,23 @@ initial_state = np.array(
 )
 
 
+# these give same result sooo
 propagator = np.matmul(np.matmul(vectors, sp.linalg.expm(-1j * np.pi * diagonal)), vectors_inverse)
-
 propagator_2 = sp.linalg.expm(-1j * np.pi * H_numpy)
+
+
+
 
 print(initial_state)
 print(np.round(np.matmul(propagator, initial_state), 4))
 
 print(np.round(np.matmul(propagator_2, initial_state), 4))
 #print(np.round(np.matmul(np.matmul(vectors, sp.linalg.expm(diagonal)), vectors_inverse), 3))
+
+
+
+
+
 
 
 
