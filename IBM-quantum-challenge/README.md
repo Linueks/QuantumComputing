@@ -9,6 +9,7 @@
 - [ ] Look into symmetries of the Hamiltonian and think about what unitary gates preserve this symmetry.
 - [x] The way of doing the Trotterization is not unique. Test different ways of splitting the product.
 - [x] Learn about Mitiq Python package for error mitigation / post processing. Zero Noise Extrapolation. (Turned out fruitless)
+- [ ] Think about using qubits 0, 2, 4, 6 to implement bit- or phase-flip error correction. 
 
 
 ## Preliminary Results
