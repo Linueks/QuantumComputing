@@ -32,8 +32,11 @@ Below is the absolute first result of testing the most basic implementation of o
   <img width="400" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/trotter_sim_4_16_shots8192_numjobs8.png">
 </p>
 
+Below is the error calculation when compared to the exact propagation as a function of Trotter steps for both of the above decompositions.
 
-
+<p align="center">
+  <img width="400" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/error_comparison.png">
+</p>
 
 
 
