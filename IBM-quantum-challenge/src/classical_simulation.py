@@ -2,6 +2,7 @@ import numpy as np
 import qiskit as qk
 import qiskit.opflow as opflow
 import matplotlib.pyplot as plt
+plt.style.use('seaborn-whitegrid')
 
 
 

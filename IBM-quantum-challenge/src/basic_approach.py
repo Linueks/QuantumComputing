@@ -117,6 +117,8 @@ def trotter_step_zyxzyx(
     """
     One Trotter step build out of xx, yy, zz subcircuits. This approach might
     prove worse than just hardcoding everything when it comes time to optimize.
+    This is a three qubit operation, thus active qubits needs three positions
+
 
     Inputs:
         time: qiskit.circuit.Parameter
@@ -126,14 +128,14 @@ def trotter_step_zyxzyx(
     returns:
         quantum_circuit: qiskit.circuit.QuantumCircuit
     """
-
+    qubit1, qubit2, qubit3 = active_qubits
     quantum_circuit = qk.QuantumCircuit(quantum_register)
     quantum_circuit += zz_subcircuit(time, quantum_register, qubit1, qubit2)
     quantum_circuit += yy_subcircuit(time, quantum_register, qubit1, qubit2)
     quantum_circuit += xx_subcircuit(time, quantum_register, qubit1, qubit2)
-    quantum_circuit += zz_subcircuit(time, quantum_register, qubit1+2, qubit2+2)
-    quantum_circuit += yy_subcircuit(time, quantum_register, qubit1+2, qubit2+2)
-    quantum_circuit += xx_subcircuit(time, quantum_register, qubit1+2, qubit2+2)
+    quantum_circuit += zz_subcircuit(time, quantum_register, qubit2, qubit3)
+    quantum_circuit += yy_subcircuit(time, quantum_register, qubit2, qubit3)
+    quantum_circuit += xx_subcircuit(time, quantum_register, qubit2, qubit3)
 
     return quantum_circuit
 
@@ -147,6 +149,7 @@ def trotter_step_zzyyxx(
     """
     One Trotter step build out of xx, yy, zz subcircuits. This approach might
     prove worse than just hardcoding everything when it comes time to optimize.
+    This is a three qubit operation, thus active qubits needs three positions
 
     Inputs:
         time: qiskit.circuit.Parameter
@@ -156,14 +159,14 @@ def trotter_step_zzyyxx(
     returns:
         quantum_circuit: qiskit.circuit.QuantumCircuit
     """
-
+    qubit1, qubit2, qubit3 = active_qubits
     quantum_circuit = qk.QuantumCircuit(quantum_register)
     quantum_circuit += zz_subcircuit(time, quantum_register, qubit1, qubit2)
-    quantum_circuit += zz_subcircuit(time, quantum_register, qubit1+2, qubit2+2)
+    quantum_circuit += zz_subcircuit(time, quantum_register, qubit2, qubit3)
     quantum_circuit += yy_subcircuit(time, quantum_register, qubit1, qubit2)
-    quantum_circuit += yy_subcircuit(time, quantum_register, qubit1+2, qubit2+2)
+    quantum_circuit += yy_subcircuit(time, quantum_register, qubit2, qubit3)
     quantum_circuit += xx_subcircuit(time, quantum_register, qubit1, qubit2)
-    quantum_circuit += xx_subcircuit(time, quantum_register, qubit1+2, qubit2+2)
+    quantum_circuit += xx_subcircuit(time, quantum_register, qubit2, qubit3)
 
     return quantum_circuit
 
@@ -256,8 +259,8 @@ def generate_tomography_circuits(
         measured_qubits
     )
     if draw_all_tomography_circuits:
-        for i in range(len(quantum_circuit)):
-            quantum_circuit[i].draw(output='mpl')
+        for i in range(len(tomography_circuits)):
+            tomography_circuits[i].draw(output='mpl')
             plt.tight_layout()
         plt.show()
 
@@ -326,6 +329,8 @@ def run_experiments(
     shots=8192,
     repetitions=8,
     draw_circuit=True,
+    n_qubits=7,
+    active_qubits=[1,3,5],
 ):
     """
     Container function to collect and output results for everything interesting
@@ -351,6 +356,8 @@ def run_experiments(
                 trotter_steps=steps,
                 target_time=target_time,
                 draw_circuit=draw_circuit,
+                n_qubits=n_qubits,
+                active_qubits=active_qubits,
             )
             tomography_circuits = generate_tomography_circuits(
                 circuit,
@@ -409,8 +416,8 @@ if __name__=='__main__':
     shots = 1
     trotter_steps = 1                                                           # Variable if just running one simulation
     end_time = np.pi                                                            # Specified in competition
-    min_trotter_steps = 4                                                       # 4 minimum for competition
-    max_trotter_steps = 4
+    min_trotter_steps = 1                                                       # 4 minimum for competition
+    max_trotter_steps = 1
     num_jobs = 1
     decompositions = [trotter_step_zyxzyx, trotter_step_zzyyxx]
 
@@ -426,6 +433,7 @@ if __name__=='__main__':
 
 
     #"""
+    active_qubits = [1, 3, 5]
     fid_means, fid_stdevs = run_experiments(
         time,
         sim_noisy_jakarta,
@@ -436,6 +444,8 @@ if __name__=='__main__':
         shots=shots,
         repetitions=num_jobs,
         draw_circuit=False,
+        n_qubits=7,
+        active_qubits=active_qubits,
     )
     #"""
 
