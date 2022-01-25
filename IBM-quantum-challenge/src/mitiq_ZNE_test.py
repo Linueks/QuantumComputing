@@ -7,7 +7,7 @@ import numpy as np
 import mitiq as mt
 import qiskit as qk
 import matplotlib.pyplot as plt
-from basic_approach import test_generate_circuit, run_simulation
+from simulation import test_generate_circuit, run_simulation
 from functools import partial
 
 

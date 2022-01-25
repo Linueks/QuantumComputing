@@ -5,8 +5,8 @@ import qiskit.opflow as op
 import matplotlib.pyplot as plt
 import qiskit.quantum_info as qi
 from classical_simulation import hamiltonian_xxx
-from basic_approach import (trotter_step_zyxzyx, trotter_step_zzyyxx,
-    build_circuit)
+from simulation import (trotter_step_zyxzyx, trotter_step_zzyyxx,
+    first_cancellations_zzyyxx, build_circuit)
 from qiskit.opflow import Zero, One, I, X, Y, Z
 plt.style.use('seaborn-whitegrid')
 
@@ -200,6 +200,13 @@ if __name__=='__main__':
         trotter_steps_min=trotter_steps_min,
         trotter_steps_max=trotter_steps_max,
     )
+    cancellations = calculate_error_evolution(
+        initial_state,
+        exact_propagator,
+        first_cancellations_zzyyxx,
+        trotter_steps_min=trotter_steps_min,
+        trotter_steps_max=trotter_steps_max,
+    )
     plt.plot(
         range(trotter_steps_min, trotter_steps_max),
         errors_zyxzyx,
@@ -209,6 +216,11 @@ if __name__=='__main__':
         range(trotter_steps_min, trotter_steps_max),
         errors_zzyyxx,
         label='error zzyyxx',
+    )
+    plt.plot(
+        range(trotter_steps_min, trotter_steps_max),
+        cancellations,
+        label='error first cancellations',
     )
     plt.xlabel('Trotter Steps')
     plt.ylabel('Error')
