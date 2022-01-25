@@ -10,6 +10,7 @@
 - [x] The way of doing the Trotterization is not unique. Test different ways of splitting the product.
 - [x] Learn about Mitiq Python package for error mitigation / post processing. Zero Noise Extrapolation. (Turned out fruitless)
 - [ ] Think about using qubits 0, 2, 4, 6 to implement bit- or phase-flip error correction. 
+- [ ] Learn about Qiskit circuit transpiler
 
 
 ## Preliminary Results
@@ -32,8 +33,11 @@ Below is the absolute first result of testing the most basic implementation of o
   <img width="400" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/trotter_sim_4_16_shots8192_numjobs8.png">
 </p>
 
+Below is the error calculation when compared to the exact propagation as a function of Trotter steps for both of the above decompositions. This calculation assumes the gates are implemented with zero noise. 
 
-
+<p align="center">
+  <img width="400" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/error_comparison.png">
+</p>
 
 
 
