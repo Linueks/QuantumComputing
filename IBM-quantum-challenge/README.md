@@ -6,7 +6,7 @@
 - [x] Implement the most naive implementation of Trotter simulation on noisy backend.
 - [ ] Think about preserved quantities and symmetries of the initial and final state.
 - [ ] Look into usecases for the four "trash" qubits on the Jakarta system.
-- [ ] Look into symmetries of the Hamiltonian and think about what unitary gates preserve this symmetry.
+- [x] Look into symmetries of the Hamiltonian and think about what unitary gates preserve this symmetry.
 - [x] The way of doing the Trotterization is not unique. Test different ways of splitting the product.
 - [x] Learn about Mitiq Python package for error mitigation / post processing. Zero Noise Extrapolation. (Turned out fruitless)
 - [ ] Think about using qubits 0, 2, 4, 6 to implement bit- or phase-flip error correction. 
@@ -38,6 +38,15 @@ Below is the error calculation when compared to the exact propagation as a funct
 <p align="center">
   <img width="400" height="300" src="https://github.com/Linueks/QuantumMachineLearning/blob/main/IBM-quantum-challenge/figures/error_comparison.png">
 </p>
+
+### Symmetry Protection
+Implementing the simplest of the symmetry protections from [Tran et al.](https://github.com/Linueks/QuantumComputing/blob/main/IBM-quantum-challenge/papers/symmetry_protection_2006.16248.pdf) I was able to achieve a fairly significant leap in the fidelity for the zzyyxx decomposition using four Trotter steps on the noisy backend. Following are the results of the calculations
+
+<p align="left">
+  <img width="400" height="300" src="https://github.com/Linueks/QuantumComputing/blob/main/IBM-quantum-challenge/figures/trotter_sim_4_16_shots8192_numjobs8_SPTrue.png">
+  <img width="400" height="300" src="https://github.com/Linueks/QuantumComputing/blob/main/IBM-quantum-challenge/figures/trotter_sim_4_8_shots8192_numjobs8_SPTrue.png">
+</p>
+
 
 
 
