@@ -284,13 +284,13 @@ def build_circuit(
                 quantum_register,
                 active_qubits,
             )
-        """
+
         if symmetry_protection and trotter_steps%2 == 1:
             quantum_circuit += symmetry_protection_step(
                 quantum_register,
                 active_qubits,
             )
-        """
+        
         quantum_circuit.barrier()
 
     if transpile_circuit:
