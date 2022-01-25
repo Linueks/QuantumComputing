@@ -214,6 +214,19 @@ def first_cancellations_zzyyxx(
 
 
 
+def symmetry_protection_step(
+    quantum_register,
+    active_qubits
+):
+    """
+    This function adds a symmetry protection step to the circuit
+    """
+    quantum_circuit = qk.QuantumCircuit(quantum_register)
+    quantum_circuit.h(active_qubits)
+
+    return quantum_circuit
+
+
 
 def build_circuit(
     time,
@@ -223,6 +236,7 @@ def build_circuit(
     draw_circuit=False,
     n_qubits=7,
     active_qubits=[1, 3, 5],
+    symmetry_protection=True,
     transpile_circuit=True,
 ):
     """
@@ -238,27 +252,45 @@ def build_circuit(
         show_all_tomography_circuits: bool
         n_qubits: int
         active_qubits: list of qubit positions
+        symmetry_protection: bool
+        transpile_circuit: bool
 
     Returns:
         quantum_circuit: qiskit.circuit.QuantumCircuit
         quantum_register: qiskit.circuit.QuantumRegister
     """
-    quantum_register = qk.QuantumRegister(n_qubits)                       # 7 qubits on Jakarta machine. 5 on Belem
+    quantum_register = qk.QuantumRegister(n_qubits)                             # 7 qubits on Jakarta machine. 5 on Belem
     quantum_circuit = qk.QuantumCircuit(quantum_register)
 
-    if n_qubits == 7:
-        # yalla fix so I can use the function with other qubit numbers.
-        # set up initial state |110>
-        quantum_circuit.x([3, 5])                                             # Remember to switch back once access to Jakarta
-        quantum_circuit.barrier()
+    # yalla fix so I can use the function with other qubit numbers.
+    # set up initial state |110>. This assumes you want this initial state.
+    quantum_circuit.x([active_qubits[1], active_qubits[2]])                     # Remember to switch back once access to Jakarta
+    quantum_circuit.barrier()
 
-    for step in range(trotter_steps):
+    for step in range(1, trotter_steps+1):
+        if symmetry_protection and (step)%2 == 1:
+            quantum_circuit += symmetry_protection_step(
+                quantum_register,
+                active_qubits,
+            )
         single_trotter_step = trotter_step_function(
             time,
             quantum_register,
             active_qubits,
         )
         quantum_circuit += single_trotter_step
+        if symmetry_protection and (step)%2 == 1:
+            quantum_circuit += symmetry_protection_step(
+                quantum_register,
+                active_qubits,
+            )
+        """
+        if symmetry_protection and trotter_steps%2 == 1:
+            quantum_circuit += symmetry_protection_step(
+                quantum_register,
+                active_qubits,
+            )
+        """
         quantum_circuit.barrier()
 
     if transpile_circuit:
@@ -381,6 +413,7 @@ def run_experiments(
     draw_circuit=True,
     n_qubits=7,
     active_qubits=[1,3,5],
+    symmetry_protection=True,
 ):
     """
     Container function to collect and output results for everything interesting
@@ -408,6 +441,8 @@ def run_experiments(
                 draw_circuit=draw_circuit,
                 n_qubits=n_qubits,
                 active_qubits=active_qubits,
+                symmetry_protection=True,
+                transpile_circuit=False,
             )
             tomography_circuits = generate_tomography_circuits(
                 circuit,
@@ -464,42 +499,41 @@ if __name__=='__main__':
     initial_state = ket_one^ket_one^ket_zero
     time = qk.circuit.Parameter('t')
     shots = 8192
-    trotter_steps = 1                                                           # Variable if just running one simulation
     end_time = np.pi                                                            # Specified in competition
     min_trotter_steps = 4                                                       # 4 minimum for competition
-    max_trotter_steps = 16
+    max_trotter_steps = 8
+    trotter_steps = 4                                                           # Variable if just running one simulation
     num_jobs = 8
+    symmetry_protection = True
 
     # should group the two lists here to one dictionary probably
     decompositions = [
         trotter_step_zyxzyx,
         trotter_step_zzyyxx,
-        first_cancellations_zzyyxx,
+        #first_cancellations_zzyyxx,
     ]
     names = [
         'Trot zyxzyx',
         'Trot zzyyxx',
         'Cancel zzyyxx',
     ]
-    linestyles = [
-        'solid',
-        'dotted',
-        'dashed',
-        'dashdot'
-    ]
-
-    """
-    circuit, register = build_circuit(
-        time,
-        first_cancellations_zzyyxx,
-        trotter_steps=trotter_steps,
-        target_time=end_time,
-        draw_circuit=True
-    )
-    """
-
 
     #"""
+    circuit, register = build_circuit(
+        time,
+        trotter_step_zzyyxx,
+        trotter_steps=trotter_steps,
+        target_time=end_time,
+        draw_circuit=True,
+        n_qubits=3,
+        active_qubits=[0, 1, 2],
+        symmetry_protection=symmetry_protection,
+        transpile_circuit=False,
+    )
+    #"""
+
+
+    """
     active_qubits = [1, 3, 5]
     fid_means, fid_stdevs = run_experiments(
         time,
@@ -510,25 +544,33 @@ if __name__=='__main__':
         target_time=end_time,
         shots=shots,
         repetitions=num_jobs,
-        draw_circuit=False,
+        draw_circuit=True,
         n_qubits=7,
         active_qubits=active_qubits,
+        symmetry_protection=symmetry_protection,
     )
-    np.save(f'../data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}', fid_means)
-    np.save(f'../data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}', fid_stdevs)
+    np.save(f'../data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}', fid_means)
+    np.save(f'../data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}', fid_stdevs)
     #"""
 
     #fid_means = np.load(f'../data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}.npy')
     #fid_stdevs = np.load(f'../data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}.npy')
 
+    linestyles = [
+        'solid',
+        'dotted',
+        'dashed',
+        'dashdot'
+    ]
+
     x_axis = range(min_trotter_steps, max_trotter_steps+1)
 
-    for i, name in enumerate(names):
+    for i in range(len(decompositions)):
         eb1 = plt.errorbar(
             x_axis, fid_means[i, :],
             yerr=fid_stdevs[i, :],
             errorevery=1,
-            label=name,
+            label=names[i],
             ls=linestyles[i],
             capsize=5
         )
@@ -537,6 +579,6 @@ if __name__=='__main__':
     plt.ylabel('Fidelity')
     plt.title(f'Trotter Simulation with {shots} Shots, {num_jobs} Jobs, Backend: {config.backend_name}')
     plt.legend()
-    plt.savefig(f'../figures/trotter_sim_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_numjobs{num_jobs}')
+    plt.savefig(f'../figures/trotter_sim_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_numjobs{num_jobs}_SP{repr(symmetry_protection)}')
     plt.show()
     #"""
