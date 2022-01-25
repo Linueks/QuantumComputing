@@ -53,7 +53,11 @@ The concept of symmetry protection is covered in depth in the paper. Basically y
   <img width="500" height="300" src="https://github.com/Linueks/QuantumComputing/blob/main/IBM-quantum-challenge/figures/symmetry_protected_zzyyxx.png">
 </p>
 
-Here the odd steps are Hadamard-sandwiched while the even terms will have their Hadamards cancel to the identity. This setup with the zzyyxx decomposition and four Trotter steps yields a fidelity of ~54%
+Here the odd steps are Hadamard-sandwiched while the even terms will have their Hadamards cancel to the identity. This setup with the zzyyxx decomposition and four Trotter steps yields a fidelity of ~54%. The circuit is below.
+
+<p align="center">
+  <img width="800" height="600" src="https://github.com/Linueks/QuantumComputing/blob/main/IBM-quantum-challenge/figures/SP_best.png">
+</p>
 
 
 
