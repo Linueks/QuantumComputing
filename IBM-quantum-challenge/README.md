@@ -42,9 +42,15 @@ Below is the error calculation when compared to the exact propagation as a funct
 ### Symmetry Protection
 Implementing the simplest of the symmetry protections from [Tran et al.](https://github.com/Linueks/QuantumComputing/blob/main/IBM-quantum-challenge/papers/symmetry_protection_2006.16248.pdf) I was able to achieve a fairly significant leap in the fidelity for the zzyyxx decomposition using four Trotter steps on the noisy backend. Following are the results of the calculations
 
-<p align="left">
+<p align="center">
   <img width="400" height="300" src="https://github.com/Linueks/QuantumComputing/blob/main/IBM-quantum-challenge/figures/trotter_sim_4_16_shots8192_numjobs8_SPTrue.png">
   <img width="400" height="300" src="https://github.com/Linueks/QuantumComputing/blob/main/IBM-quantum-challenge/figures/trotter_sim_4_8_shots8192_numjobs8_SPTrue.png">
+</p>
+
+The concept of symmetry protection is covered in depth in the paper. Basically you interweave unitaries that ensure that the symmetry of the specified Hamiltonian are being preserved. What I implemented follows directly from their example on the Heisenberg model:
+
+<p align="center">
+  <img width="500" height="300" src="https://github.com/Linueks/QuantumComputing/blob/main/IBM-quantum-challenge/figures/symmetry_protected_zzyyxx.png">
 </p>
 
 
