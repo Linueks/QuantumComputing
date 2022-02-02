@@ -109,6 +109,55 @@ def zz_subcircuit(
 
 
 
+def trotter_step_actual_dot_product(
+    time,
+    quantum_register,
+    active_qubits,
+):
+    """
+    I think this is actually what he meant...
+
+    Inputs:
+        time: qiskit.circuit.Parameter
+        quantum_register: qiskit.circuit.QuantumRegister
+        active_qubits: list of qubit positions
+
+    returns:
+        quantum_circuit: qiskit.circuit.QuantumCircuit
+    """
+
+
+
+
+def trotter_step_dot_product(
+    time,
+    quantum_register,
+    active_qubits,
+):
+    """
+    One trotter step for the SU1 preserving Trotterization explained by Ale
+
+    Inputs:
+        time: qiskit.circuit.Parameter
+        quantum_register: qiskit.circuit.QuantumRegister
+        active_qubits: list of qubit positions
+
+    returns:
+        quantum_circuit: qiskit.circuit.QuantumCircuit
+    """
+    qubit1, qubit2, qubit3 = active_qubits
+    quantum_circuit = qk.QuantumCircuit(quantum_register)
+    quantum_circuit += xx_subcircuit(time, quantum_register, qubit1, qubit2)
+    quantum_circuit += yy_subcircuit(time, quantum_register, qubit1, qubit2)
+    quantum_circuit += zz_subcircuit(time, quantum_register, qubit1, qubit2)
+    quantum_circuit += zz_subcircuit(time, quantum_register, qubit2, qubit3)
+    quantum_circuit += xx_subcircuit(time, quantum_register, qubit2, qubit3)
+    quantum_circuit += yy_subcircuit(time, quantum_register, qubit2, qubit3)
+
+    return quantum_circuit
+
+
+
 def trotter_step_zyxzyx(
     time,
     quantum_register,
@@ -118,7 +167,6 @@ def trotter_step_zyxzyx(
     One Trotter step build out of xx, yy, zz subcircuits. This approach might
     prove worse than just hardcoding everything when it comes time to optimize.
     This is a three qubit operation, thus active qubits needs three positions
-
 
     Inputs:
         time: qiskit.circuit.Parameter
@@ -214,17 +262,36 @@ def first_cancellations_zzyyxx(
 
 
 
-def symmetry_protection_step(
+def symmetry_protection_su_2(
     quantum_register,
     active_qubits
 ):
     """
-    This function adds a symmetry protection step to the circuit
+    Function to add a SU2 symmetry protection step into the register. This is
+    the symmetry group that commutes with the Heisenberg model Hamiltonian.
     """
     quantum_circuit = qk.QuantumCircuit(quantum_register)
     quantum_circuit.h(active_qubits)
 
     return quantum_circuit
+
+
+
+def symmetry_protection_u_1(
+    quantum_register,
+    active_qubits
+):
+    """
+    Function to add a U1 symmetry protection step into the register. This is the
+    symmetry group which is preserved by the initial state |110>.
+    """
+    quantum_circuit = qk.QuantumCircuit(quantum_register)
+
+    """
+    Putting this function on hold until I've implemented the other Trotter
+    decomposition.
+    """
+    return
 
 
 
@@ -253,7 +320,7 @@ def build_circuit(
         n_qubits: int
         active_qubits: list of qubit positions
         symmetry_protection: bool
-        transpile_circuit: bool
+        transpile_circuit: int (from 0, 3 according to Qiskit levels)
 
     Returns:
         quantum_circuit: qiskit.circuit.QuantumCircuit
@@ -269,35 +336,41 @@ def build_circuit(
 
     for step in range(1, trotter_steps+1):
         if symmetry_protection and (step)%2 == 1:
-            quantum_circuit += symmetry_protection_step(
+            quantum_circuit += symmetry_protection_su_2(
                 quantum_register,
                 active_qubits,
             )
+
         single_trotter_step = trotter_step_function(
             time,
             quantum_register,
             active_qubits,
         )
         quantum_circuit += single_trotter_step
+
         if symmetry_protection and (step)%2 == 1:
-            quantum_circuit += symmetry_protection_step(
+            quantum_circuit += symmetry_protection_su_2(
                 quantum_register,
                 active_qubits,
             )
 
+        """
+        # I get slightly higher for the best one with this, but it seems so wrong....
+        # If I put it after the entire circuit like I thought was described
+        # in the paper then the result becomes real bad.
         if symmetry_protection and trotter_steps%2 == 1:
             quantum_circuit += symmetry_protection_step(
                 quantum_register,
                 active_qubits,
             )
-        
+        #"""
         quantum_circuit.barrier()
 
     if transpile_circuit:
         quantum_circuit = qk.compiler.transpile(
             quantum_circuit,
             basis_gates=['id', 'u1', 'u2', 'u3', 'cx'],
-            optimization_level=3,
+            optimization_level=transpile_circuit,
         )
 
     if draw_circuit:
@@ -414,6 +487,8 @@ def run_experiments(
     n_qubits=7,
     active_qubits=[1,3,5],
     symmetry_protection=True,
+    transpile_circuit=1,
+    verbose=True,
 ):
     """
     Container function to collect and output results for everything interesting
@@ -432,7 +507,13 @@ def run_experiments(
     fid_stdevs = np.zeros_like(fid_means)
 
     for i, decomp in enumerate(trotter_step_list):
+        if verbose:
+            print(repr(decomp), '---------------------------------------------')
+
         for j, steps in enumerate(range(min_trotter_steps,max_trotter_steps+1)):
+            if verbose:
+                print(f'Trotter step: {steps}')
+
             circuit, register = build_circuit(
                 time,
                 decomp,
@@ -442,7 +523,7 @@ def run_experiments(
                 n_qubits=n_qubits,
                 active_qubits=active_qubits,
                 symmetry_protection=True,
-                transpile_circuit=False,
+                transpile_circuit=True,
             )
             tomography_circuits = generate_tomography_circuits(
                 circuit,
@@ -456,10 +537,12 @@ def run_experiments(
                     backend,
                     shots,
                 )
-                print(f'Job ID: {job.job_id()}')
                 jobs.append(job)
 
-                qk.tools.monitor.job_monitor(job)
+                if verbose:
+                    print(f'Job ID: {job.job_id()}')
+                    qk.tools.monitor.job_monitor(job)
+
                 try:
                     if job.error_message() is not None:
                         print(job.error_message())
@@ -503,22 +586,24 @@ if __name__=='__main__':
     min_trotter_steps = 4                                                       # 4 minimum for competition
     max_trotter_steps = 8
     trotter_steps = 4                                                           # Variable if just running one simulation
-    num_jobs = 8
+    num_jobs = 2
     symmetry_protection = True
 
     # should group the two lists here to one dictionary probably
     decompositions = [
         trotter_step_zyxzyx,
         trotter_step_zzyyxx,
+        trotter_step_dot_product,
         #first_cancellations_zzyyxx,
     ]
     names = [
         'Trot zyxzyx',
         'Trot zzyyxx',
-        'Cancel zzyyxx',
+        'Trot SU1'
+        #'Cancel zzyyxx',
     ]
 
-    #"""
+    """
     circuit, register = build_circuit(
         time,
         trotter_step_zzyyxx,
@@ -532,8 +617,7 @@ if __name__=='__main__':
     )
     #"""
 
-
-    """
+    #"""
     active_qubits = [1, 3, 5]
     fid_means, fid_stdevs = run_experiments(
         time,
@@ -544,10 +628,12 @@ if __name__=='__main__':
         target_time=end_time,
         shots=shots,
         repetitions=num_jobs,
-        draw_circuit=True,
+        draw_circuit=False,
         n_qubits=7,
         active_qubits=active_qubits,
         symmetry_protection=symmetry_protection,
+        transpile_circuit=2,
+        verbose=False,
     )
     np.save(f'../data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}', fid_means)
     np.save(f'../data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}', fid_stdevs)
