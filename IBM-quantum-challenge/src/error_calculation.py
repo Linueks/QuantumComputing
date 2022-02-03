@@ -5,8 +5,7 @@ import qiskit.opflow as op
 import matplotlib.pyplot as plt
 import qiskit.quantum_info as qi
 from classical_simulation import hamiltonian_xxx
-from simulation import (trotter_step_zyxzyx, trotter_step_zzyyxx,
-    first_cancellations_zzyyxx, build_circuit)
+from simulation import *
 from qiskit.opflow import Zero, One, I, X, Y, Z
 plt.style.use('seaborn-whitegrid')
 
@@ -181,6 +180,22 @@ if __name__=='__main__':
     trotter_steps_min = 4
     trotter_steps_max = 20
 
+    decompositions = [
+        #trotter_step_zyxzyx,
+        trotter_step_zzyyxx,
+        #trotter_step_actual_dot_product,
+        #trotter_step_dot_product,
+        #first_cancellations_zzyyxx,
+    ]
+    names = [
+        #'Trot zyxzyx',
+        'Trot zzyyxx',
+        #'Trot x+y z',
+        #'Trot SU1'
+        #'Cancel zzyyxx',
+    ]
+
+
     hamiltonian = make_hamiltonian_matrix()
     exact_propagator = make_propagator(
         hamiltonian,
@@ -193,20 +208,10 @@ if __name__=='__main__':
         trotter_steps_min=trotter_steps_min,
         trotter_steps_max=trotter_steps_max,
     )
-    errors_zzyyxx = calculate_error_evolution(
-        initial_state,
-        exact_propagator,
-        trotter_step_zzyyxx,
-        trotter_steps_min=trotter_steps_min,
-        trotter_steps_max=trotter_steps_max,
-    )
-    cancellations = calculate_error_evolution(
-        initial_state,
-        exact_propagator,
-        first_cancellations_zzyyxx,
-        trotter_steps_min=trotter_steps_min,
-        trotter_steps_max=trotter_steps_max,
-    )
+
+
+
+
     plt.plot(
         range(trotter_steps_min, trotter_steps_max),
         errors_zyxzyx,

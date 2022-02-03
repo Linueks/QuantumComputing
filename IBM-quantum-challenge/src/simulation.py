@@ -416,7 +416,7 @@ def build_circuit(
     if transpile_circuit:
         quantum_circuit = qk.compiler.transpile(
             quantum_circuit,
-            basis_gates=['id', 'u1', 'u2', 'u3', 'cx'],
+            basis_gates=['id', 'rz', 'sx', 'x', 'cx', 'reset'],
             optimization_level=transpile_circuit,
         )
 
@@ -632,27 +632,27 @@ if __name__=='__main__':
     end_time = np.pi                                                            # Specified in competition
     min_trotter_steps = 4                                                       # 4 minimum for competition
     max_trotter_steps = 12
-    trotter_steps = 4                                                           # Variable if just running one simulation
+    trotter_steps = 1                                                           # Variable if just running one simulation
     num_jobs = 2
-    symmetry_protection = True
+    symmetry_protection = False
 
     # should group the two lists here to one dictionary probably
     decompositions = [
         #trotter_step_zyxzyx,
-        #trotter_step_zzyyxx,
-        trotter_step_actual_dot_product,
+        trotter_step_zzyyxx,
+        #trotter_step_actual_dot_product,
         #trotter_step_dot_product,
         #first_cancellations_zzyyxx,
     ]
     names = [
         #'Trot zyxzyx',
-        #'Trot zzyyxx',
-        'Trot x+y z',
+        'Trot zzyyxx',
+        #'Trot x+y z',
         #'Trot SU1'
         #'Cancel zzyyxx',
     ]
 
-    """
+    #"""
     circuit, register = build_circuit(
         time,
         trotter_step_zzyyxx,
@@ -666,7 +666,7 @@ if __name__=='__main__':
     )
     #"""
 
-    #"""
+    """
     active_qubits = [1, 3, 5]
     fid_means, fid_stdevs = run_experiments(
         time,
@@ -681,7 +681,7 @@ if __name__=='__main__':
         n_qubits=7,
         active_qubits=active_qubits,
         symmetry_protection=symmetry_protection,
-        transpile_circuit=0,
+        transpile_circuit=3,
         verbose=False,
     )
     np.save(f'../data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}_{len(decompositions)}', fid_means)
