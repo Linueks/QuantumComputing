@@ -109,6 +109,47 @@ def zz_subcircuit(
 
 
 
+def n_xy_subcircuit(
+    time,
+    quantum_register,
+    qubit1,
+    qubit2,
+):
+    """
+    Subcircuit for my specific Hamiltonian based on the description in the paper
+    https://arxiv.org/pdf/quant-ph/0308006.pdf specifically figure 6.
+
+    Inputs:
+        time: qiskit.circuit.Parameter
+        quantum_register: qiskit.circuit.QuantumRegister
+        qubit1: int
+        qubit2: int
+
+    returns:
+        quantum_circuit: qiskit.circuit.QuantumCircuit
+    """
+    quantum_circuit = qk.QuantumCircuit(quantum_register)
+    quantum_circuit.rz((-np.pi/2)*time, qubit2)
+    quantum_circuit.cnot(qubit2, qubit1)
+    quantum_circuit.rz((np.pi/2)*time, qubit1)
+    quantum_circuit.ry((np.pi/2 - 2)*time, qubit2)
+    quantum_circuit.cnot(qubit1, qubit2)
+    quantum_circuit.ry((2 - np.pi/2)*time, qubit2)
+    quantum_circuit.cnot(qubit2, qubit1)
+    quantum_circuit.rz((np.pi/2)*time, qubit1)
+
+    return quantum_circuit
+
+
+"""
+These two functions are the ones im wondering about Alessandro
+Above I switched the sign for the Rz argument from the paper because qiskit uses
+another Rz than the paper. I didn't switch argument in Ry because I think the
+difference between the two only introduces global phase diff. might be wrong on
+this one.
+"""
+
+
 def trotter_step_actual_dot_product(
     time,
     quantum_register,
@@ -125,8 +166,14 @@ def trotter_step_actual_dot_product(
     returns:
         quantum_circuit: qiskit.circuit.QuantumCircuit
     """
+    qubit1, qubit2, qubit3 = active_qubits
+    quantum_circuit = qk.QuantumCircuit(quantum_register)
+    quantum_circuit += n_xy_subcircuit(time, quantum_register, qubit1, qubit2)
+    quantum_circuit += zz_subcircuit(time, quantum_register, qubit1, qubit2)
+    quantum_circuit += zz_subcircuit(time, quantum_register, qubit2, qubit3)
+    quantum_circuit += n_xy_subcircuit(time, quantum_register, qubit2, qubit3)
 
-
+    return quantum_circuit
 
 
 def trotter_step_dot_product(
@@ -584,22 +631,24 @@ if __name__=='__main__':
     shots = 8192
     end_time = np.pi                                                            # Specified in competition
     min_trotter_steps = 4                                                       # 4 minimum for competition
-    max_trotter_steps = 8
+    max_trotter_steps = 12
     trotter_steps = 4                                                           # Variable if just running one simulation
     num_jobs = 2
     symmetry_protection = True
 
     # should group the two lists here to one dictionary probably
     decompositions = [
-        trotter_step_zyxzyx,
-        trotter_step_zzyyxx,
-        trotter_step_dot_product,
+        #trotter_step_zyxzyx,
+        #trotter_step_zzyyxx,
+        trotter_step_actual_dot_product,
+        #trotter_step_dot_product,
         #first_cancellations_zzyyxx,
     ]
     names = [
-        'Trot zyxzyx',
-        'Trot zzyyxx',
-        'Trot SU1'
+        #'Trot zyxzyx',
+        #'Trot zzyyxx',
+        'Trot x+y z',
+        #'Trot SU1'
         #'Cancel zzyyxx',
     ]
 
@@ -632,15 +681,15 @@ if __name__=='__main__':
         n_qubits=7,
         active_qubits=active_qubits,
         symmetry_protection=symmetry_protection,
-        transpile_circuit=2,
+        transpile_circuit=0,
         verbose=False,
     )
-    np.save(f'../data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}', fid_means)
-    np.save(f'../data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}', fid_stdevs)
+    np.save(f'../data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}_{len(decompositions)}', fid_means)
+    np.save(f'../data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}_{len(decompositions)}', fid_stdevs)
     #"""
 
-    #fid_means = np.load(f'../data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}.npy')
-    #fid_stdevs = np.load(f'../data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}.npy')
+    #fid_means = np.load(f'../data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}_{len(decompositions)}.npy')
+    #fid_stdevs = np.load(f'../data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}_{len(decompositions)}.npy')
 
     linestyles = [
         'solid',
@@ -665,6 +714,6 @@ if __name__=='__main__':
     plt.ylabel('Fidelity')
     plt.title(f'Trotter Simulation with {shots} Shots, {num_jobs} Jobs, Backend: {config.backend_name}')
     plt.legend()
-    plt.savefig(f'../figures/trotter_sim_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_numjobs{num_jobs}_SP{repr(symmetry_protection)}')
+    plt.savefig(f'../figures/trotter_sim_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_numjobs{num_jobs}_SP{repr(symmetry_protection)}_{len(decompositions)}')
     plt.show()
     #"""
