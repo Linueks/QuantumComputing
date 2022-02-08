@@ -4,13 +4,17 @@
 
 ## Immediate TO-DO
 - [x] Implement the most naive implementation of Trotter simulation on noisy backend.
-- [ ] Think about preserved quantities and symmetries of the initial and final state.
-- [ ] Look into usecases for the four "trash" qubits on the Jakarta system.
+- [X] Think about preserved quantities and symmetries of the initial and final state.
 - [x] Look into symmetries of the Hamiltonian and think about what unitary gates preserve this symmetry.
 - [x] The way of doing the Trotterization is not unique. Test different ways of splitting the product.
 - [x] Learn about Mitiq Python package for error mitigation / post processing. Zero Noise Extrapolation. (Turned out fruitless)
-- [ ] Think about using qubits 0, 2, 4, 6 to implement bit- or phase-flip error correction. 
-- [ ] Learn about Qiskit circuit transpiler
+- [ ] Look into usecases for the four "trash" qubits on the Jakarta system.
+  - [ ] Think about using qubits 0, 2, 4, 6 to implement bit- or phase-flip error correction. 
+  - [ ] Possibly Make Denoising Autoencoders here.
+- [X] Learn about Qiskit circuit transpiler
+- [ ] Compute Mathematically if the Circuit discussed with Alessandro really is a valid propagator (100% fidelity)
+- [ ] Implement a Quantum Autoencoder
+- [ ] Implement Variational Fast Forwarding
 
 
 ## Preliminary Results
