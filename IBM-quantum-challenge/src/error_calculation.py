@@ -137,7 +137,10 @@ def calculate_error_evolution(
             draw_circuit=False,
             n_qubits=3,
             active_qubits=[0,1,2],
+            symmetry_protection=True,
+            transpile_circuit=0,
         )
+
         circuit_operator = qi.Operator(quantum_circuit)
         circuit_operator = circuit_operator.data
         errors[steps-1] = calculate_error(
@@ -163,7 +166,16 @@ def calculate_error_evolution(
 
 if __name__=='__main__':
     initial_state = One^One^Zero
+
     initial_state = initial_state.to_matrix()
+    #print(initial_state)
+    """
+    initial_state = np.array(
+        [0, 0, 0, 0, 0, 0, 1, 0],
+        dtype=complex,
+    )
+    #"""
+    """
     initial_state = np.array(
         [
         [0],
@@ -174,27 +186,14 @@ if __name__=='__main__':
         [0],
         [1],
         [0],
-        ]
+        ],
+        dtype=complex,
     )
+    #"""
+    #print(initial_state)
     time = qk.circuit.Parameter('t')
-    trotter_steps_min = 4
+    trotter_steps_min = 1
     trotter_steps_max = 20
-
-    decompositions = [
-        #trotter_step_zyxzyx,
-        trotter_step_zzyyxx,
-        #trotter_step_actual_dot_product,
-        #trotter_step_dot_product,
-        #first_cancellations_zzyyxx,
-    ]
-    names = [
-        #'Trot zyxzyx',
-        'Trot zzyyxx',
-        #'Trot x+y z',
-        #'Trot SU1'
-        #'Cancel zzyyxx',
-    ]
-
 
     hamiltonian = make_hamiltonian_matrix()
     exact_propagator = make_propagator(
@@ -208,10 +207,20 @@ if __name__=='__main__':
         trotter_steps_min=trotter_steps_min,
         trotter_steps_max=trotter_steps_max,
     )
-
-
-
-
+    errors_zzyyxx = calculate_error_evolution(
+        initial_state,
+        exact_propagator,
+        trotter_step_zzyyxx,
+        trotter_steps_min=trotter_steps_min,
+        trotter_steps_max=trotter_steps_max,
+    )
+    cancellations = calculate_error_evolution(
+        initial_state,
+        exact_propagator,
+        trotter_step_actual_dot_product,
+        trotter_steps_min=trotter_steps_min,
+        trotter_steps_max=trotter_steps_max,
+    )
     plt.plot(
         range(trotter_steps_min, trotter_steps_max),
         errors_zyxzyx,
@@ -222,11 +231,14 @@ if __name__=='__main__':
         errors_zzyyxx,
         label='error zzyyxx',
     )
+
+
     plt.plot(
         range(trotter_steps_min, trotter_steps_max),
         cancellations,
-        label='error first cancellations',
+        label='trotter dot product',
     )
+
     plt.xlabel('Trotter Steps')
     plt.ylabel('Error')
     plt.title('L2 Squared Error of Trotter Approximation vs Exact Propagation')

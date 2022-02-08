@@ -32,26 +32,41 @@ def propagator(time):
 
 
 
-def classical_simulation(initial_state):
+def classical_simulation(time, initial_state):
     # A copy paste from the notebook just to have it here
 
-    time_points = np.linspace(0, np.pi, 100)
-    probability_110 = np.zeros_like(time_points)
+    probability = np.zeros_like(time_points)
 
     for i, t in enumerate(time_points):
-        probability_110[i] = np.abs((~initial_state @ propagator(float(t)) \
+        probability[i] = np.abs((~initial_state @ propagator(float(t)) \
                                     @ initial_state).eval())**2
 
-    plt.plot(time_points, probability_110)
-    plt.xlabel('Time')
-    plt.ylabel(r'Probability of state $|110\rangle$')
-    plt.title(r'Evolution of state $|110\rangle$ under $H_{XXX}$')
-    plt.show()
+
+    return probability
+
 
 
 
 if __name__=='__main__':
     ket_zero = opflow.Zero
     ket_one = opflow.One
-    initial_state = ket_one^ket_one^ket_zero
-    classical_simulation(initial_state)
+    one_one_zero = ket_one^ket_one^ket_zero
+    one_zero_one = ket_one^ket_zero^ket_one
+    zero_one_one = ket_zero^ket_one^ket_one
+    time_points = np.linspace(0, np.pi, 100)
+
+    prob_110 = classical_simulation(time_points, one_one_zero)
+    prob_101 = classical_simulation(time_points, one_zero_one)
+    prob_011 = classical_simulation(time_points, zero_one_one)
+
+    plt.plot(time_points, prob_110, label='110')
+    plt.plot(time_points, prob_101, label='101')
+    plt.plot(time_points, prob_011, label='011')
+
+    plt.xlim(0, np.pi)
+    plt.ylim(0, 1)
+    plt.xlabel('Time')
+    plt.ylabel(r'Probability')
+    plt.legend()
+    plt.title(r'Evolution of state $|110\rangle, |101\rangle, |011\rangle$ under $H_{XXX}$')
+    plt.show()
