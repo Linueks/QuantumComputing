@@ -10,6 +10,7 @@
 - [x] Learn about Mitiq Python package for error mitigation / post processing. Zero Noise Extrapolation. (Turned out fruitless)
 - [ ] Look into usecases for the four "trash" qubits on the Jakarta system.
   - [ ] Think about using qubits 0, 2, 4, 6 to implement bit- or phase-flip error correction. 
+  - [ ] Possibly Make Denoising Autoencoders here.
 - [X] Learn about Qiskit circuit transpiler
 
 
