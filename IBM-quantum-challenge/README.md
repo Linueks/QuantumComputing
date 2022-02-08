@@ -12,6 +12,8 @@
   - [ ] Think about using qubits 0, 2, 4, 6 to implement bit- or phase-flip error correction. 
   - [ ] Possibly Make Denoising Autoencoders here.
 - [X] Learn about Qiskit circuit transpiler
+- [ ] Implement a Quantum Autoencoder
+- [ ] Implement Variational Fast Forwarding
 
 
 ## Preliminary Results
