@@ -12,6 +12,7 @@
   - [ ] Think about using qubits 0, 2, 4, 6 to implement bit- or phase-flip error correction. 
   - [ ] Possibly Make Denoising Autoencoders here.
 - [X] Learn about Qiskit circuit transpiler
+- [ ] Compute Mathematically if the Circuit discussed with Alessandro really is a valid propagator (100% fidelity)
 - [ ] Implement a Quantum Autoencoder
 - [ ] Implement Variational Fast Forwarding
 
