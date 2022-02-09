@@ -13,6 +13,7 @@
   - [ ] Possibly Make Denoising Autoencoders here.
 - [X] Learn about Qiskit circuit transpiler
 - [ ] Compute Mathematically if the Circuit discussed with Alessandro really is a valid propagator (100% fidelity)
+  - [ ] Work on manual gate-cancellations for different trotterizations
 - [ ] Implement a Quantum Autoencoder
 - [ ] Implement Variational Fast Forwarding
 
