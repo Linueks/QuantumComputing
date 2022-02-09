@@ -17,6 +17,28 @@
 - [ ] Implement Variational Fast Forwarding
 
 
+## Code Description
+As of writing this the code is organized as follows:
+
+- classical_simulation.py
+- decompositions.py
+- error_calculation.py
+- simulation.py
+
+### Classical Simulation
+This file is mainly for calculating the evolution of the system using classical computation. As of now, all it does is calculate some inner products for given initial states.
+
+### Decompositions
+This is an organizatorial file containing the various Trotter decompositions and Symmetry Protection ansätze that I have tested so far. In this file you will find the following functions:
+
+1. xx_subcircuit, yy_subcircuit, zz_subcircuit. These are the operators explained in the competition jupyter-notebook gathered into functions for ease of use. 
+2. trotter_step_zyxzyx, trotter_step_zzyyxx. These are the first decompositions explored during this work. They are respectively the composition for first qubit 1 and 2 then 2 and 3, and the composition for one complete interaction direction at a time.
+3. n_xy_subcircuit, trotter_step_partial_dot_product, full_sum_optimal are ones 
+
+
+
+
+
 ## Preliminary Results
 
 ### Trotter Decompositions
