@@ -28,7 +28,7 @@ def xx_subcircuit(
     quantum_circuit.rz(2*time, qubit2)
     quantum_circuit.cnot(qubit1, qubit2)
     quantum_circuit.ry(-np.pi/2, [qubit1, qubit2])
-    quantum_circuit.barrier()
+    #quantum_circuit.barrier()
 
     return quantum_circuit
 
@@ -59,7 +59,7 @@ def yy_subcircuit(
     quantum_circuit.rz(2*time, qubit2)
     quantum_circuit.cnot(qubit1, qubit2)
     quantum_circuit.rx(-np.pi/2, [qubit1, qubit2])
-    quantum_circuit.barrier()
+    #quantum_circuit.barrier()
 
     return quantum_circuit
 
@@ -88,7 +88,7 @@ def zz_subcircuit(
     quantum_circuit.cnot(qubit1, qubit2)
     quantum_circuit.rz(2*time, qubit2)
     quantum_circuit.cnot(qubit1, qubit2)
-    quantum_circuit.barrier()
+    #quantum_circuit.barrier()
 
     return quantum_circuit
 
@@ -116,10 +116,10 @@ def n_xy_subcircuit(
     quantum_circuit = qk.QuantumCircuit(quantum_register)
     quantum_circuit.rz((-np.pi/2), qubit2)
     quantum_circuit.cnot(qubit2, qubit1)
-    quantum_circuit.rz((-np.pi/2), qubit1)
-    quantum_circuit.ry((np.pi/2 + 2*time), qubit2)
-    quantum_circuit.cnot(qubit1, qubit2)
+    quantum_circuit.rz((np.pi/2), qubit1)
     quantum_circuit.ry((-2*time - np.pi/2), qubit2)
+    quantum_circuit.cnot(qubit1, qubit2)
+    quantum_circuit.ry((2*time + np.pi/2), qubit2)
     quantum_circuit.cnot(qubit2, qubit1)
     quantum_circuit.rz((np.pi/2), qubit1)
 
@@ -127,29 +127,12 @@ def n_xy_subcircuit(
 
 
 
-def symmetry_protection_su_2(
-    quantum_register,
-    active_qubits
-):
-    """
-    Function to add a SU2 symmetry protection step into the register. This is
-    the symmetry group that commutes with the Heisenberg model Hamiltonian.
-    """
-    quantum_circuit = qk.QuantumCircuit(quantum_register)
-    quantum_circuit.h(active_qubits)
-
-    return quantum_circuit
-
-
-
-def trotter_step_partial_dot_product(
+def trotter_step_xplusy_zz_xplusy(
     time,
     quantum_register,
     active_qubits,
 ):
     """
-    I think this is actually what he meant...
-
     Inputs:
         time: qiskit.circuit.Parameter
         quantum_register: qiskit.circuit.QuantumRegister
@@ -169,7 +152,33 @@ def trotter_step_partial_dot_product(
 
 
 
-def full_sum_optimal_construction(
+def trotter_step_xplusy_z_xplusy_z(
+    time,
+    quantum_register,
+    active_qubits,
+):
+    """
+    Inputs:
+        time: qiskit.circuit.Parameter
+        quantum_register: qiskit.circuit.QuantumRegister
+        active_qubits: list of qubit positions
+
+    returns:
+        quantum_circuit: qiskit.circuit.QuantumCircuit
+    """
+    qubit1, qubit2, qubit3 = active_qubits
+    quantum_circuit = qk.QuantumCircuit(quantum_register)
+    quantum_circuit += n_xy_subcircuit(time, quantum_register, qubit1, qubit2)
+    quantum_circuit += zz_subcircuit(time, quantum_register, qubit1, qubit2)
+    quantum_circuit += n_xy_subcircuit(time, quantum_register, qubit2, qubit3)
+    quantum_circuit += zz_subcircuit(time, quantum_register, qubit2, qubit3)
+
+
+    return quantum_circuit
+
+
+
+def trotter_step_xplusyplusz_xplusyplusz(
     time,
     quantum_register,
     active_qubits,
@@ -189,14 +198,70 @@ def full_sum_optimal_construction(
     quantum_circuit = qk.QuantumCircuit(quantum_register)
     quantum_circuit.rz(-np.pi/2, qubit2)
     quantum_circuit.cnot(qubit2, qubit1)
-    quantum_circuit.rz(-2*time - np.pi/2, qubit1)
-    quantum_circuit.ry(np.pi/2 + 2*time, qubit2)
-    quantum_circuit.cnot(qubit1, qubit2)
+    quantum_circuit.rz(2*time + np.pi/2, qubit1)
     quantum_circuit.ry(-2*time - np.pi/2, qubit2)
+    quantum_circuit.cnot(qubit1, qubit2)
+    quantum_circuit.ry(2*time + np.pi/2, qubit2)
     quantum_circuit.cnot(qubit2, qubit1)
     quantum_circuit.rz(np.pi/2, qubit1)
 
+    quantum_circuit.rz(-np.pi/2, qubit3)
+    quantum_circuit.cnot(qubit3, qubit2)
+    quantum_circuit.rz(2*time + np.pi/2, qubit2)
+    quantum_circuit.ry(-2*time - np.pi/2, qubit3)
+    quantum_circuit.cnot(qubit2, qubit3)
+    quantum_circuit.ry(2*time + np.pi/2, qubit3)
+    quantum_circuit.cnot(qubit3, qubit2)
+    quantum_circuit.rz(np.pi/2, qubit2)
+
     return quantum_circuit
+
+
+
+def cancellation_test_1(
+    time,
+    quantum_register,
+    active_qubits,
+):
+    qubit1, qubit2, qubit3 = active_qubits
+    quantum_circuit = qk.QuantumCircuit(quantum_register)
+
+    quantum_circuit.rz(-np.pi/2, qubit1)
+    quantum_circuit.cnot(qubit1, qubit2)
+    quantum_circuit.ry(-2*time - np.pi/2, qubit1)
+    quantum_circuit.rz(2*time + np.pi/2, qubit2)
+    quantum_circuit.cnot(qubit2, qubit1)
+    quantum_circuit.ry(-2*time + np.pi/2, qubit1)
+    quantum_circuit.cnot(qubit1, qubit2)
+    quantum_circuit.cnot(qubit2, qubit3)
+
+
+    quantum_circuit.ry(-2*time - np.pi/2, qubit2)
+    quantum_circuit.cnot(qubit3, qubit2)
+    quantum_circuit.ry(-2*time + np.pi/2, qubit2)
+    quantum_circuit.cnot(qubit3, qubit2)
+
+    quantum_circuit.rz(4*np.pi/2, qubit2)
+
+    quantum_circuit.cnot(qubit3, qubit2)
+    quantum_circuit.ry(-2*time - np.pi/2, qubit2)
+    quantum_circuit.cnot(qubit3, qubit2)
+    quantum_circuit.ry(-2*time + np.pi/2, qubit2)
+
+
+    quantum_circuit.cnot(qubit3, qubit2)
+    quantum_circuit.cnot(qubit2, qubit1)
+    quantum_circuit.ry(-2*time - np.pi/2, qubit1)
+    quantum_circuit.cnot(qubit2, qubit1)
+    quantum_circuit.rz(-2*time + np.pi/2, qubit2)
+    quantum_circuit.ry(2*time + np.pi/2, qubit1)
+    quantum_circuit.cnot(qubit1, qubit2)
+    quantum_circuit.rz(np.pi/2, qubit1)
+
+    return quantum_circuit
+
+
+
 
 
 def trotter_step_zyxzyx(
@@ -276,3 +341,18 @@ def symmetry_protection_u_1(
     decomposition.
     """
     return
+
+
+
+def symmetry_protection_su_2(
+    quantum_register,
+    active_qubits
+):
+    """
+    Function to add a SU2 symmetry protection step into the register. This is
+    the symmetry group that commutes with the Heisenberg model Hamiltonian.
+    """
+    quantum_circuit = qk.QuantumCircuit(quantum_register)
+    quantum_circuit.h(active_qubits)
+
+    return quantum_circuit
