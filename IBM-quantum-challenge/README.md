@@ -9,12 +9,12 @@
 - [x] The way of doing the Trotterization is not unique. Test different ways of splitting the product.
 - [x] Learn about Mitiq Python package for error mitigation / post processing. Zero Noise Extrapolation. (Turned out fruitless)
 - [ ] Look into usecases for the four "trash" qubits on the Jakarta system.
-  - [ ] Think about using qubits 0, 2, 4, 6 to implement bit- or phase-flip error correction. 
-  - [ ] Possibly Make Denoising Autoencoders here.
+  - [x] Think about using qubits 0, 2, 4, 6 to implement bit- or phase-flip error correction. (turns out not really helpful here)
 - [X] Learn about Qiskit circuit transpiler
 - [ ] Compute Mathematically if the Circuit discussed with Alessandro really is a valid propagator (100% fidelity)
   - [ ] Work on manual gate-cancellations for different trotterizations
 - [ ] Implement a Quantum Autoencoder
+  - [ ] Possibly Make Denoising Autoencoders here. (This I have started looking at a bit)
 - [ ] Implement Variational Fast Forwarding
 
 
