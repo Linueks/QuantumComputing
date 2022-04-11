@@ -28,11 +28,10 @@ class TrotterSimulation:
         simulation_end_time,
         number_of_qubits,
         shots,
-        number_of_jobs,
+        repetitions_per_circuit,
         active_qubits,
         verbose,
         draw_circuit,
-        use_real_device,
     ):
         self.decompositions = decompositions
         self.n_decompositions = len(decompositions)
@@ -44,10 +43,9 @@ class TrotterSimulation:
         self.shots = shots
         self.active_qubits = active_qubits
         self.jobs = []
-        self.repetitions = number_of_jobs
+        self.repetitions = repetitions_per_circuit
         self.verbose = verbose
         self.draw_circuit = draw_circuit
-        self.use_real_device = use_real_device
 
 
     def set_transpilation_level(
@@ -59,8 +57,10 @@ class TrotterSimulation:
 
     def set_symmetry_protection(
         self,
+        symmetry_protection,
         symmetry_protection_function,
     ):
+        self.symmetry_protection = symmetry_protection
         self.symmetry_protection_function = symmetry_protection_function
 
 
@@ -77,81 +77,80 @@ class TrotterSimulation:
         trotter_step_function,
         name,
     ):
-        #quantum_register = 0
-        self.quantum_register = qk.QuantumRegister(
+        quantum_register = qk.QuantumRegister(
             self.n_qubits,
             name=name,
         )
-        self.quantum_circuit = qk.QuantumCircuit(
-            self.quantum_register,
+        quantum_circuit = qk.QuantumCircuit(
+            quantum_register,
             name=name,
         )
         # To make initial state as specified in the competition |110>
-        self.quantum_circuit.x([self.active_qubits[1], self.active_qubits[2]])
-        self.quantum_circuit.barrier()
+        quantum_circuit.x([self.active_qubits[1], self.active_qubits[2]])
+        quantum_circuit.barrier()
 
         for step in range(1, trotter_steps+1):
-            print(step%2)
-            if symmetry_protection and step%2 == 1:
-                self.quantum_circuit += self.symmetry_protection_function(
-                    self.quantum_register,
+            if self.symmetry_protection and step%2 == 1:
+                quantum_circuit += self.symmetry_protection_function(
+                    quantum_register,
                     self.active_qubits,
                 )
-                self.quantum_circuit += trotter_step_function(
+                quantum_circuit += trotter_step_function(
                     self.param,
-                    self.quantum_register,
+                    quantum_register,
                     self.active_qubits,
                 )
-                self.quantum_circuit += self.symmetry_protection_function(
-                    self.quantum_register,
+                quantum_circuit += self.symmetry_protection_function(
+                    quantum_register,
                     self.active_qubits,
                 )
 
             else:
-                self.quantum_circuit += trotter_step_function(
+                quantum_circuit += trotter_step_function(
                     self.param,
-                    self.quantum_register,
+                    quantum_register,
                     self.active_qubits,
                 )
-            #self.quantum_circuit.barrier()
 
         if type(self.transpilation_level) == int:#"""
-            self.quantum_circuit = qk.compiler.transpile(
-                self.quantum_circuit,
+            quantum_circuit = qk.compiler.transpile(
+                quantum_circuit,
                 basis_gates=self.default_gates,
                 optimization_level=self.transpilation_level,
             )
-        #"""
-        self.quantum_circuit = self.quantum_circuit.bind_parameters(
+        quantum_circuit = quantum_circuit.bind_parameters(
             {time: self.end_time/trotter_steps}
         )
+
+        return quantum_circuit
 
 
     def make_tomography_circuits(
         self,
+        quantum_circuit,
     ):
         measured_qubits = self.active_qubits
         tomography_circuits = tomo.state_tomography_circuits(
-            self.quantum_circuit,
+            quantum_circuit,
             measured_qubits,
         )
 
         return tomography_circuits
 
 
+
     def circuit_drawer(
         self,
-        base_circuit,
-        tomography_circuits,
+        circuits,
     ):
-        if base_circuit:
-            self.quantum_circuit.draw(output='mpl')
+        if type(circuits) == qk.circuit.quantumcircuit.QuantumCircuit:
+            circuits.draw(output='mpl')
             plt.tight_layout()
             plt.show()
 
-        if tomography_circuits:
-            for i in range(len(self.tomography_circuits)):
-                self.tomography_circuits[i].draw(output='mpl')
+        else:
+            for circuit in tomography_circuits:
+                circuit.draw(output='mpl')
                 plt.tight_layout()
             plt.show()
 
@@ -168,9 +167,11 @@ class TrotterSimulation:
         )
 
 
+
     def calculate_fidelity(
         self,
-        jobs,
+        job,
+        tomography_circuits,
     ):
         ket_zero = opflow.Zero
         ket_one = opflow.One
@@ -178,24 +179,27 @@ class TrotterSimulation:
         target_state_matrix = final_state_target.to_matrix()
         fidelities = []
 
-        for job in jobs:
-            result = job.result()
-            tomography_fitter = tomo.StateTomographyFitter(
-                result,
-                self.tomography_circuits,
-            )
-            rho_fit = tomography_fitter.fit(
-                method='lstsq',
-            )
-            fidelity = qk.quantum_info.state_fidelity(
-                rho_fit,
-                target_state_matrix,
-            )
-            fidelities.append(fidelity)
+        result = job.result()
+
+        tomography_fitter = tomo.StateTomographyFitter(
+            result,
+            tomography_circuits,
+        )
+        rho_fit = tomography_fitter.fit(
+            method='lstsq',
+        )
+        fidelity = qk.quantum_info.state_fidelity(
+            rho_fit,
+            target_state_matrix,
+        )
+        fidelities.append(fidelity)
 
         #del(self.jobs)
         fidelity_mean = np.mean(fidelities)
         fidelity_stdev = np.std(fidelities)
+
+        print(fidelity_mean)
+        print(fidelity_stdev)
 
         if self.verbose:
             print(
@@ -204,6 +208,7 @@ class TrotterSimulation:
                 f'{fidelity_stdev:.4f}')
 
         return fidelity_mean, fidelity_stdev
+
 
 
     def run(
@@ -218,23 +223,25 @@ class TrotterSimulation:
         fidelity_stdev = np.zeros_like(fidelity_means)
         trotter_steps = range(min_trotter_steps, max_trotter_steps+1)
 
-        quantum_circuits = []
+        tomography_circuits = []
 
         for i, (name, decomposition) in enumerate(self.decompositions.items()):
             if self.verbose:
                 print(f'Decomposition: {name}')
             for j, steps in enumerate(trotter_steps):
+                print(steps)
                 if self.verbose:
                     print(f'Trotter Step: {steps}')
 
-                self.make_base_circuit(
+                base_circuit = self.make_base_circuit(
                     steps,
                     decomposition,
                     name,
                 )
 
-                tomography_circuits = self.make_tomography_circuits()
-
+                tomography_circuits = self.make_tomography_circuits(
+                    base_circuit,
+                )
 
                 if self.draw_circuit:
                     self.circuit_drawer(
@@ -242,48 +249,23 @@ class TrotterSimulation:
                         tomography_circuits=False,
                     )
 
+        job = self.execute_circuit(
+            tomography_circuits,
+        )
+        job_id = job.job_id()
+        if self.verbose:
+            print(f'Job ID: {job.job_id()}')
+            qk.tools.monitor.job_monitor(job)
 
-                for k in range(self.repetitions):
-                    quantum_circuits.append(tomography_circuits)
+        fidelity_mean, fidelity_stdev = self.calculate_fidelity(
+            job,
+            tomography_circuits,
+        )
 
-                if self.use_real_device:
+        if self.verbose:
+            print('-------------------------------------------------------')
 
-                    job = self.execute_circuit(
-                        circuits,
-                    )
-                    job_id = job.job_id()
-                    print(job_id)
-                    jobs.append(job)
-
-                    if not self.use_real_device:
-
-                        job = self.execute_circuit()
-                        jobs.append(job)
-
-                        if self.verbose:
-                            print(f'Job ID: {job.job_id()}')
-                            qk.tools.monitor.job_monitor(job)
-
-                        try:
-                            if job.error_message() is not None:
-                                print(job.error_message())
-                        except:
-                            pass
-
-
-                # to run on real hardware we
-
-
-                fidelity_mean, fidelity_stdev = calculate_fidelity(jobs)
-                fidelity_means[i, j] = fidelity_mean
-                fidelity_stdev[i, j] = fidelity_stdev
-                self.delete_circuits()
-
-
-            if self.verbose:
-                print('-------------------------------------------------------')
-
-        return fidelity_means, fidelity_stdev
+        return fidelity_mean, fidelity_stdev
 
 
 
@@ -311,24 +293,23 @@ if __name__=='__main__':
     shots = 8192
     n_qubits = 7
     end_time = np.pi                                                            # Specified in competition
-    min_trotter_steps = 4                                                       # 4 minimum for competition
+    min_trotter_steps = 8                                                       # 4 minimum for competition
     max_trotter_steps = 8
     trotter_steps = 1                                                           # Variable if just running one simulation
-    num_jobs = 1
+    repetitions = 1
     basis_gates=['id', 'rz', 'sx', 'x', 'cx', 'reset']
     active_qubits = [1, 3, 5]
 
 
-    transpilation_level = False
+    transpilation_level = 3
     noisy_simulation = True
-    symmetry_protection = True
+    symmetry_protection = False
     verbose = True
     draw_circuit = False
-    use_real_device = True
 
     decompositions = {
         #'zyxzyx': trotter_step_zyxzyx,
-        'zzyyxx': trotter_step_zzyyxx,
+        #'zzyyxx': trotter_step_zzyyxx,
         #'x+yzzx+y': trotter_step_xplusy_zz_xplusy,
         #'x+yzx+yz': trotter_step_xplusy_z_xplusy_z,
         'x+y+z': trotter_step_xplusyplusz_xplusyplusz,
@@ -338,43 +319,42 @@ if __name__=='__main__':
         'canceltest1': cancellation_test_1,
     }
 
+
     if noisy_simulation:
         simulator = TrotterSimulation(
-            decompositions,
-            time,
-            sim_jakarta_noisy,
-            basis_gates,
-            end_time,
-            n_qubits,
-            shots,
-            num_jobs,
-            active_qubits,
-            verbose,
-            draw_circuit,
-            use_real_device,
+            decompositions=decompositions,
+            simulation_parameter=time,
+            simulation_backend=jakarta_backend,
+            backend_default_gates=basis_gates,
+            simulation_end_time=end_time,
+            number_of_qubits=n_qubits,
+            shots=shots,
+            repetitions_per_circuit=repetitions,
+            active_qubits=active_qubits,
+            verbose=verbose,
+            draw_circuit=draw_circuit,
         )
     else:
         simulator = TrotterSimulation(
-            decompositions,
-            time,
-            sim_jakarta_noiseless,
-            basis_gates,
-            end_time,
-            n_qubits,
-            shots,
-            num_jobs,
-            active_qubits,
-            verbose,
-            draw_circuit,
-            use_real_device,
+            decompositions=decompositions,
+            simulation_parameter=time,
+            simulation_backend=sim_jakarta_noiseless,
+            backend_default_gates=basis_gates,
+            simulation_end_time=end_time,
+            number_of_qubits=n_qubits,
+            shots=shots,
+            repetitions_per_circuit=repetitions,
+            active_qubits=active_qubits,
+            verbose=verbose,
+            draw_circuit=draw_circuit,
         )
-
-
 
     simulator.set_transpilation_level(transpilation_level)
 
-    if symmetry_protection:
-        simulator.set_symmetry_protection(symmetry_protection_su_2)
+    simulator.set_symmetry_protection(
+        symmetry_protection,
+        symmetry_protection_su_2,
+    )
 
     fid_means, fid_stdevs = simulator.run()
 
