@@ -74,17 +74,14 @@ use_real_device = True
 
 
 simulator = TrotterSimulation(
-    decompositions=decompositions,
     simulation_parameter=time,
     simulation_backend=jakarta_backend,
     backend_default_gates=basis_gates,
     simulation_end_time=end_time,
     number_of_qubits=n_qubits,
     shots=shots,
-    repetitions_per_circuit=repetitions,
     active_qubits=active_qubits,
     verbose=verbose,
-    draw_circuit=draw_circuit,
 )
 
 simulator.set_transpilation_level(transpilation_level)
@@ -108,7 +105,7 @@ tomography_circuits = simulator.make_tomography_circuits(
 qjob = jakarta_backend.retrieve_job(job_ids[4])
 
 
-fidelity, _ = simulator.calculate_fidelity(
+fidelity = simulator.calculate_fidelity(
     qjob,
     tomography_circuits,
 )

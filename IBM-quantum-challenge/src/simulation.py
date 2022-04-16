@@ -9,9 +9,10 @@ import time as time
 import qiskit as qk
 import qiskit.opflow as opflow
 import matplotlib.pyplot as plt
-import qiskit.ignis.verification.tomography as tomo
 from qiskit.quantum_info import state_fidelity
+import qiskit.ignis.verification.tomography as tomo
 from decompositions import *
+
 import warnings
 warnings.filterwarnings('ignore')
 plt.style.use('seaborn-whitegrid')
@@ -21,20 +22,15 @@ plt.style.use('seaborn-whitegrid')
 class TrotterSimulation:
     def __init__(
         self,
-        decompositions,
         simulation_parameter,
         simulation_backend,
         backend_default_gates,
         simulation_end_time,
         number_of_qubits,
         shots,
-        repetitions_per_circuit,
         active_qubits,
         verbose,
-        draw_circuit,
     ):
-        self.decompositions = decompositions
-        self.n_decompositions = len(decompositions)
         self.param = simulation_parameter
         self.backend = simulation_backend
         self.default_gates = backend_default_gates
@@ -43,16 +39,24 @@ class TrotterSimulation:
         self.shots = shots
         self.active_qubits = active_qubits
         self.jobs = []
-        self.repetitions = repetitions_per_circuit
         self.verbose = verbose
-        self.draw_circuit = draw_circuit
+
 
 
     def set_transpilation_level(
         self,
         level
     ):
+        """
+        Utility function to set transpilation level
+
+        Input:
+            level: int (between 0 and 3)
+        """
         self.transpilation_level = level
+
+        if self.verbose:
+            print(f'Transpilation level: {self.transpilation_level}')
 
 
     def set_symmetry_protection(
@@ -60,8 +64,15 @@ class TrotterSimulation:
         symmetry_protection,
         symmetry_protection_function,
     ):
+        """
+        Utility function to enable symmetry protection with functionality of
+        being able to implement other SP functions later down the line.
+        """
         self.symmetry_protection = symmetry_protection
         self.symmetry_protection_function = symmetry_protection_function
+
+        if self.verbose:
+            print(f'Symmetry Protection {self.symmetry_protection}')
 
 
     def delete_circuits(
@@ -71,12 +82,32 @@ class TrotterSimulation:
         del(self.quantum_circuit)
         del(self.tomography_circuits)
 
+
+
     def make_base_circuit(
         self,
         trotter_steps,
         trotter_step_function,
         name,
     ):
+        """
+        Function to set up base circuit for a given decomposition which is used
+        to generate tomography circuits. It takes a trotter step function which
+        returns a qiskit.circuit.QuantumCircuit and adds this to a circuit
+        trotter_steps number of times.
+
+        Inputs:
+            trotter_steps: int
+            trotter_step_function: function
+            name: string
+
+        Returns:
+            quantum_circuit: qiskit.circuit.QuantumCircuit
+        """
+
+        if self.verbose:
+            print(f'Building base circuit with {repr(trotter_step_function)} and {trotter_steps} Trotter steps')
+
         quantum_register = qk.QuantumRegister(
             self.n_qubits,
             name=name,
@@ -119,7 +150,7 @@ class TrotterSimulation:
                 optimization_level=self.transpilation_level,
             )
         quantum_circuit = quantum_circuit.bind_parameters(
-            {time: self.end_time/trotter_steps}
+            {self.param: self.end_time/trotter_steps}
         )
 
         return quantum_circuit
@@ -129,6 +160,16 @@ class TrotterSimulation:
         self,
         quantum_circuit,
     ):
+        """
+        Generates 27 different quantum circuits to perform complete quantum state
+        tomography.
+
+        Inputs:
+            quantum_circuit: qiskit.circuit.QuantumCircuit
+
+        Returns:
+            tomography_circuits: list of qiskit.circuit.QuantumCircuit
+        """
         measured_qubits = self.active_qubits
         tomography_circuits = tomo.state_tomography_circuits(
             quantum_circuit,
@@ -143,6 +184,13 @@ class TrotterSimulation:
         self,
         circuits,
     ):
+        """
+        Helper function to either draw the base circuit of the decomposition or
+        all 27 tomography circuits. Mostly used for debugging.
+
+        Inputs:
+            circuits: qiskit.circuit.QuantumCircuit or list of circuits
+        """
         if type(circuits) == qk.circuit.quantumcircuit.QuantumCircuit:
             circuits.draw(output='mpl')
             plt.tight_layout()
@@ -173,6 +221,17 @@ class TrotterSimulation:
         job,
         tomography_circuits,
     ):
+        """
+        Calculates the state tomography fidelity given a qiskit job and the
+        corresponding tomography circuits for the job.
+
+        Inputs:
+            job: qiskit job object
+            tomography_circuits: list of qiskit circuits
+
+        Returns:
+            fidelity: float
+        """
         ket_zero = opflow.Zero
         ket_one = opflow.One
         final_state_target = ket_one^ket_one^ket_zero
@@ -192,80 +251,61 @@ class TrotterSimulation:
             rho_fit,
             target_state_matrix,
         )
-        fidelities.append(fidelity)
-
-        #del(self.jobs)
-        fidelity_mean = np.mean(fidelities)
-        fidelity_stdev = np.std(fidelities)
-
-        print(fidelity_mean)
-        print(fidelity_stdev)
 
         if self.verbose:
-            print(
-                f'state tomography fidelity = {fidelity_mean:.4f}',
-                '\u00B1',
-                f'{fidelity_stdev:.4f}')
+            print(f'state tomography fidelity = {fidelity:.4f}')
 
-        return fidelity_mean, fidelity_stdev
+        return fidelity
 
 
 
     def run(
         self,
+        name,
+        decomposition,
+        trotter_steps,
     ):
-        fidelity_means = np.zeros(
-            shape=(
-                self.n_decompositions,
-                max_trotter_steps - min_trotter_steps + 1
-            )
+        """
+        Builds base circuits and tomography circuits given a decomposition and
+        number of trotter steps. Then uses the circuits to calculate the state
+        tomography fidelity and returns this.
+
+        Inputs:
+            name: string
+            decomposition: python function
+            trotter_steps: int
+
+        Returns:
+            fidelity: float
+        """
+
+        base_circuit = self.make_base_circuit(
+            trotter_steps,
+            decomposition,
+            name,
         )
-        fidelity_stdev = np.zeros_like(fidelity_means)
-        trotter_steps = range(min_trotter_steps, max_trotter_steps+1)
 
-        tomography_circuits = []
-
-        for i, (name, decomposition) in enumerate(self.decompositions.items()):
-            if self.verbose:
-                print(f'Decomposition: {name}')
-            for j, steps in enumerate(trotter_steps):
-                print(steps)
-                if self.verbose:
-                    print(f'Trotter Step: {steps}')
-
-                base_circuit = self.make_base_circuit(
-                    steps,
-                    decomposition,
-                    name,
-                )
-
-                tomography_circuits = self.make_tomography_circuits(
-                    base_circuit,
-                )
-
-                if self.draw_circuit:
-                    self.circuit_drawer(
-                        base_circuit=True,
-                        tomography_circuits=False,
-                    )
+        tomography_circuits = self.make_tomography_circuits(
+            base_circuit,
+        )
 
         job = self.execute_circuit(
             tomography_circuits,
         )
-        job_id = job.job_id()
         if self.verbose:
+            job_id = job.job_id()
             print(f'Job ID: {job.job_id()}')
             qk.tools.monitor.job_monitor(job)
 
-        fidelity_mean, fidelity_stdev = self.calculate_fidelity(
+        fidelity = self.calculate_fidelity(
             job,
             tomography_circuits,
         )
 
         if self.verbose:
-            print('-------------------------------------------------------')
+            print('-----------------------------------------------------------')
 
-        return fidelity_mean, fidelity_stdev
+        return fidelity
 
 
 
@@ -293,75 +333,58 @@ if __name__=='__main__':
     shots = 8192
     n_qubits = 7
     end_time = np.pi                                                            # Specified in competition
-    min_trotter_steps = 8                                                       # 4 minimum for competition
-    max_trotter_steps = 8
-    trotter_steps = 1                                                           # Variable if just running one simulation
-    repetitions = 1
+    min_trotter_steps = 4                                                       # 4 minimum for competition
+    max_trotter_steps = 12
+    trotter_steps = range(min_trotter_steps, max_trotter_steps+1)                                                           # Variable if just running one simulation
     basis_gates=['id', 'rz', 'sx', 'x', 'cx', 'reset']
     active_qubits = [1, 3, 5]
 
-
     transpilation_level = 3
-    noisy_simulation = True
-    symmetry_protection = False
+    symmetry_protection = True
     verbose = True
-    draw_circuit = False
 
     decompositions = {
-        #'zyxzyx': trotter_step_zyxzyx,
-        #'zzyyxx': trotter_step_zzyyxx,
-        #'x+yzzx+y': trotter_step_xplusy_zz_xplusy,
-        #'x+yzx+yz': trotter_step_xplusy_z_xplusy_z,
+        'zyxzyx': trotter_step_zyxzyx,
+        'zzyyxx': trotter_step_zzyyxx,
+        'x+yzzx+y': trotter_step_xplusy_zz_xplusy,
+        'x+yzx+yz': trotter_step_xplusy_z_xplusy_z,
         'x+y+z': trotter_step_xplusyplusz_xplusyplusz,
     }
 
-    test_decompositions = {
-        'canceltest1': cancellation_test_1,
-    }
-
-
-    if noisy_simulation:
+    def create_simulation(backend):
         simulator = TrotterSimulation(
-            decompositions=decompositions,
             simulation_parameter=time,
-            simulation_backend=jakarta_backend,
+            simulation_backend=backend,
             backend_default_gates=basis_gates,
             simulation_end_time=end_time,
             number_of_qubits=n_qubits,
             shots=shots,
-            repetitions_per_circuit=repetitions,
             active_qubits=active_qubits,
             verbose=verbose,
-            draw_circuit=draw_circuit,
         )
-    else:
-        simulator = TrotterSimulation(
-            decompositions=decompositions,
-            simulation_parameter=time,
-            simulation_backend=sim_jakarta_noiseless,
-            backend_default_gates=basis_gates,
-            simulation_end_time=end_time,
-            number_of_qubits=n_qubits,
-            shots=shots,
-            repetitions_per_circuit=repetitions,
-            active_qubits=active_qubits,
-            verbose=verbose,
-            draw_circuit=draw_circuit,
-        )
+        return simulator
 
+    noisy_simulation = False
+    simulator = create_simulation(jakarta_backend)
     simulator.set_transpilation_level(transpilation_level)
-
     simulator.set_symmetry_protection(
         symmetry_protection,
         symmetry_protection_su_2,
     )
 
-    fid_means, fid_stdevs = simulator.run()
+    fidelities = np.zeros(shape=(len(decompositions), len(trotter_steps)))
+    for i, (name, decomposition) in enumerate(decompositions.items()):
+        for j, steps in enumerate(trotter_steps):
+            fidelity = simulator.run(
+                name,
+                decomposition,
+                steps,
+            )
+            fidelities[i, j] = fidelity
 
     #np.save(f'../data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}_{len(decompositions)}', fid_means)
     #np.save(f'../data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}_{len(decompositions)}', fid_stdevs)
     #"""
-
     #fid_means = np.load(f'../data/fidelities_mean_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}_{len(decompositions)}.npy')
     #fid_stdevs = np.load(f'../data/fidelities_std_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}_{len(decompositions)}.npy')
 
@@ -386,6 +409,7 @@ if __name__=='__main__':
     x_axis = range(min_trotter_steps, max_trotter_steps+1)
 
     for i, (name, decomposition) in enumerate(decompositions.items()):
+        """
         eb1 = plt.errorbar(
             x_axis, fid_means[i, :],
             yerr=fid_stdevs[i, :],
@@ -394,16 +418,24 @@ if __name__=='__main__':
             ls=linestyle_tuple[i][1],
             capsize=5
         )
+        """
+
+        plot = plt.plot(
+            x_axis, fidelities[i, :],
+            label=name,
+            ls=linestyle_tuple[i][1]
+        )
 
     plt.xlabel('Trotter Steps')
     plt.ylabel('Fidelity')
     plt.legend()
+
     if noisy_simulation:
-        plt.title(f'Noisy Trotter Simulation with {shots} Shots, {num_jobs} Jobs, \n Backend: {config.backend_name}, SP: {repr(symmetry_protection)}')
-        plt.savefig(f'../figures/Noisy_trotter_sim_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_numjobs{num_jobs}_SP{repr(symmetry_protection)}_{len(decompositions)}')
+        plt.title(f'Noisy Trotter Simulation with {shots} Shots, \n Backend: {config.backend_name}, SP: {repr(symmetry_protection)}')
+        plt.savefig(f'../figures/Noisy_trotter_sim_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}_{len(decompositions)}')
     else:
-        plt.title(f'Noiseless Trotter Simulation with {shots} Shots, {num_jobs} Jobs, \n Backend: {config.backend_name}, SP: {repr(symmetry_protection)}')
-        plt.savefig(f'../figures/Noiseless_trotter_sim_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_numjobs{num_jobs}_SP{repr(symmetry_protection)}_{len(decompositions)}')
+        plt.title(f'Noiseless Trotter Simulation with {shots} Shots, \n Backend: {config.backend_name}, SP: {repr(symmetry_protection)}')
+        plt.savefig(f'../figures/Noiseless_trotter_sim_{min_trotter_steps}_{max_trotter_steps}_shots{shots}_SP{repr(symmetry_protection)}_{len(decompositions)}')
 
 
     plt.show()
