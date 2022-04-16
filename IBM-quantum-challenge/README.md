@@ -1,6 +1,7 @@
 # Work on IBM Quantum Awards: Open Science Prize 2021 (using Qiskit defaults)
 
 [Project PDF](https://github.com/Linueks/QuantumComputing/blob/main/IBM-quantum-challenge/pub/IBM_Challenge_Spring_2022_Linus_Ekstrom.pdf)
+
 [Jupyter Notebook with example code](https://github.com/Linueks/QuantumComputing/blob/main/IBM-quantum-challenge/src/Trotterization_symmetry_protection_linus_ekstrom.ipynb)
 
 
