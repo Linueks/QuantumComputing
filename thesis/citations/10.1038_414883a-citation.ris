@@ -1,0 +1,21 @@
+TY  - JOUR
+AU  - Vandersypen, Lieven M. K.
+AU  - Steffen, Matthias
+AU  - Breyta, Gregory
+AU  - Yannoni, Costantino S.
+AU  - Sherwood, Mark H.
+AU  - Chuang, Isaac L.
+PY  - 2001
+DA  - 2001/12/01
+TI  - Experimental realization of Shor's quantum factoring algorithm using nuclear magnetic resonance
+JO  - Nature
+SP  - 883
+EP  - 887
+VL  - 414
+IS  - 6866
+AB  - The number of steps any classical computer requires in order to find the prime factors of an l-digit integer N increases exponentially with l, at least using algorithms known at present1. Factoring large integers is therefore conjectured to be intractable classically, an observation underlying the security of widely used cryptographic codes1,2. Quantum computers3, however, could factor integers in only polynomial time, using Shor's quantum factoring algorithm4,5,6. Although important for the study of quantum computers7, experimental demonstration of this algorithm has proved elusive8,9,10. Here we report an implementation of the simplest instance of Shor's algorithm: factorization of N = 15 (whose prime factors are 3 and 5). We use seven spin-1/2 nuclei in a molecule as quantum bits11,12, which can be manipulated with room temperature liquid-state nuclear magnetic resonance techniques. This method of using nuclei to store quantum information is in principle scalable to systems containing many quantum bits13, but such scalability is not implied by the present work. The significance of our work lies in the demonstration of experimental and theoretical techniques for precise control and modelling of complex quantum computers. In particular, we present a simple, parameter-free but predictive model of decoherence effects14 in our system.
+SN  - 1476-4687
+UR  - https://doi.org/10.1038/414883a
+DO  - 10.1038/414883a
+ID  - Vandersypen2001
+ER  - 
